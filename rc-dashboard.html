@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RingCentral Supervisor Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f5f7; color: #1a1a2e; min-height: 100vh; }
+
+  /* ── Top Nav ── */
+  nav {
+    background: #1a1a2e; height: 44px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; position: sticky; top: 0; z-index: 200;
+  }
+  .nav-left { display: flex; align-items: center; gap: 12px; }
+  .nav-logo {
+    width: 28px; height: 28px; border-radius: 6px; background: #1a56db;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; color: #fff; font-size: 13px; letter-spacing: -1px;
+  }
+  .nav-title { color: #fff; font-size: 14px; font-weight: 600; }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .nav-time { color: #94a3b8; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .live-pill { background: #14532d; color: #4ade80; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; display: flex; align-items: center; gap: 5px; }
+  .live-dot { width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── Metric Cards ── */
+  .cards-row { display: flex; background: #fff; border-bottom: 1px solid #e2e8f0; overflow-x: auto; }
+  .metric-card {
+    flex: 1; min-width: 130px; padding: 18px 16px 14px;
+    text-align: center; border-right: 1px solid #e2e8f0;
+    border-top: 3px solid transparent; cursor: pointer; transition: background 0.15s;
+  }
+  .metric-card:last-child { border-right: none; }
+  .metric-card:hover { background: #f8faff; }
+  .metric-card.active { border-top-color: currentColor; background: #f8faff; }
+  .metric-num { font-size: 42px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .metric-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .c-all        { color: #1a56db; }
+  .c-billing    { color: #dc2626; }
+  .c-support    { color: #d97706; }
+  .c-sales      { color: #7c3aed; }
+  .c-escal      { color: #0891b2; }
+  .c-backoffice { color: #65a30d; }
+  .c-refused    { color: #be123c; }
+  .c-mismatch   { color: #b45309; }
+
+  /* ── Tab Bar (Teams) ── */
+  .tab-bar {
+    background: #fff; border-bottom: 1px solid #e2e8f0;
+    padding: 0 20px; display: flex; align-items: flex-end; overflow-x: auto;
+  }
+  .tab-item {
+    padding: 10px 16px; font-size: 13px; cursor: pointer; color: #64748b;
+    border-bottom: 3px solid transparent; white-space: nowrap;
+    transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+  }
+  .tab-item:hover { color: #1a1a2e; }
+  .tab-item.active { color: #1a56db; border-bottom-color: #1a56db; font-weight: 600; }
+  .tab-count {
+    background: #e2e8f0; color: #64748b; font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 999px; min-width: 20px; text-align: center;
+  }
+  .tab-item.active .tab-count { background: #dbeafe; color: #1a56db; }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    background: #fff; border-bottom: 1px solid #e2e8f0;
+    padding: 10px 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; width: 14px; height: 14px; }
+  .search-box {
+    border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px 6px 30px;
+    font-size: 13px; width: 200px; outline: none; background: #f8faff; color: #1a1a2e;
+  }
+  .search-box:focus { border-color: #1a56db; background: #fff; }
+  .search-box::placeholder { color: #94a3b8; }
+  .filter-select {
+    border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 28px 6px 10px;
+    font-size: 13px; color: #1a1a2e;
+    background: #f8faff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+    appearance: none; outline: none; cursor: pointer;
+  }
+  .filter-select:focus { border-color: #1a56db; }
+  .clear-link { color: #1a56db; font-size: 13px; cursor: pointer; text-decoration: underline; }
+
+  /* ── Status Section Panels ── */
+  .content { padding: 20px; max-width: 1600px; margin: 0 auto; }
+  .status-panel { margin-bottom: 16px; border-radius: 6px; overflow: hidden; border: 1px solid #e2e8f0; }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 16px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+    user-select: none;
+  }
+  .panel-header-left { display: flex; align-items: center; gap: 8px; }
+  .panel-count {
+    background: rgba(255,255,255,0.25); font-size: 11px; font-weight: 700;
+    padding: 1px 8px; border-radius: 999px;
+  }
+  .panel-toggle { font-size: 11px; opacity: 0.7; }
+  .panel-body { background: #fff; }
+
+  /* Status panel colors */
+  .ph-available  { background: #15803d; }
+  .ph-oncall     { background: #dc2626; }
+  .ph-acw        { background: #6d28d9; }
+  .ph-break      { background: #c2410c; }
+  .ph-lunch      { background: #a16207; }
+  .ph-training   { background: #1d4ed8; }
+  .ph-loggedout  { background: #475569; }
+  .ph-refused    { background: #be123c; }
+  .ph-mismatch   { background: #b45309; }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: #f8faff; padding: 7px 14px; text-align: left;
+    font-size: 11px; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+    cursor: pointer; user-select: none;
+  }
+  thead th:hover { color: #1a56db; }
+  .sort-arrow { margin-left: 3px; opacity: 0.4; }
+  .sorted .sort-arrow { opacity: 1; color: #1a56db; }
+  tbody tr { border-bottom: 1px solid #f1f5f9; transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f8faff; }
+  td { padding: 8px 14px; font-size: 13px; vertical-align: middle; }
+  .empty-msg { text-align: center; color: #94a3b8; font-size: 13px; padding: 20px; background: #fff; }
+
+  .agent-name { font-weight: 600; color: #1a1a2e; }
+  .agent-group-badge {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 3px; margin-left: 6px;
+  }
+
+  /* ── Pills ── */
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .pill-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .mvp-available { background:#dcfce7; color:#15803d; } .mvp-available .pill-dot { background:#16a34a; }
+  .mvp-busy      { background:#fee2e2; color:#dc2626; } .mvp-busy .pill-dot { background:#dc2626; }
+  .mvp-dnd       { background:#ffedd5; color:#c2410c; } .mvp-dnd .pill-dot { background:#ea580c; }
+  .mvp-offline   { background:#f1f5f9; color:#64748b; } .mvp-offline .pill-dot { background:#94a3b8; }
+
+  .cx-available  { background:#e0f2fe; color:#0369a1; } .cx-available .pill-dot { background:#0284c7; }
+  .cx-oncall     { background:#fee2e2; color:#dc2626; } .cx-oncall .pill-dot { background:#dc2626; }
+  .cx-acw        { background:#ede9fe; color:#6d28d9; } .cx-acw .pill-dot { background:#7c3aed; }
+  .cx-break      { background:#ffedd5; color:#c2410c; } .cx-break .pill-dot { background:#ea580c; }
+  .cx-lunch      { background:#fef9c3; color:#a16207; } .cx-lunch .pill-dot { background:#ca8a04; }
+  .cx-training   { background:#dbeafe; color:#1d4ed8; } .cx-training .pill-dot { background:#2563eb; }
+  .cx-loggedout  { background:#f1f5f9; color:#64748b; } .cx-loggedout .pill-dot { background:#94a3b8; }
+  .cx-refused    { background:#ffe4e6; color:#be123c; } .cx-refused .pill-dot { background:#e11d48; }
+
+  .mismatch-pill { display:inline-flex; align-items:center; gap:4px; background:#fef3c7; color:#92400e; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; }
+  .dur-long   { color:#dc2626; font-weight:600; }
+  .dur-medium { color:#d97706; font-weight:600; }
+  .dur-normal { color:#64748b; }
+
+  /* ── Group badge colors ── */
+  .gb-billing    { background:#fee2e2; color:#dc2626; }
+  .gb-support    { background:#ffedd5; color:#c2410c; }
+  .gb-sales      { background:#ede9fe; color:#6d28d9; }
+  .gb-escal      { background:#e0f2fe; color:#0369a1; }
+  .gb-backoffice { background:#dcfce7; color:#15803d; }
+
+  /* ── Legend ── */
+  .legend { display:flex; gap:24px; flex-wrap:wrap; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:12px 16px; margin-top:8px; font-size:11px; }
+  .leg-section { display:flex; flex-direction:column; gap:4px; }
+  .leg-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#94a3b8; margin-bottom:2px; }
+  .leg-item { display:flex; align-items:center; gap:6px; color:#475569; }
+  .leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo">RC</div>
+    <span class="nav-title">RingCentral Supervisor Dashboard</span>
+  </div>
+  <div class="nav-right">
+    <span class="live-pill"><span class="live-dot"></span>LIVE (Mock)</span>
+    <span class="nav-time" id="clock"></span>
+  </div>
+</nav>
+
+<!-- Metric Cards -->
+<div class="cards-row" id="cardsRow"></div>
+
+<!-- Tab Bar — Teams -->
+<div class="tab-bar" id="tabBar"></div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input class="search-box" id="searchBox" type="text" placeholder="Search agents..." oninput="render()">
+  </div>
+  <select class="filter-select" id="mvpFilter" onchange="render()">
+    <option value="">All MVP Statuses</option>
+    <option>Available</option>
+    <option>On a Call</option>
+    <option>Do Not Disturb</option>
+    <option>Offline</option>
+  </select>
+  <select class="filter-select" id="cxFilter" onchange="render()">
+    <option value="">All CXone States</option>
+    <option>Available</option>
+    <option>On Call</option>
+    <option>ACW</option>
+    <option>Break</option>
+    <option>Lunch</option>
+    <option>Training</option>
+    <option>Logged Out</option>
+    <option>Refused</option>
+  </select>
+  <span class="clear-link" onclick="clearFilters()">Clear</span>
+  <span style="margin-left:auto;font-size:11px;color:#94a3b8">Auto-refresh: <span id="refreshCountdown"></span></span>
+</div>
+
+<!-- Content: status panels -->
+<div class="content" id="content"></div>
+
+<script>
+// ── Config ──
+const GROUPS = ['Billing','Support','Sales','Escalations','Back Office'];
+const GROUP_COLORS = {
+  'Billing':     { cls:'c-billing',    badge:'gb-billing' },
+  'Support':     { cls:'c-support',    badge:'gb-support' },
+  'Sales':       { cls:'c-sales',      badge:'gb-sales' },
+  'Escalations': { cls:'c-escal',      badge:'gb-escal' },
+  'Back Office': { cls:'c-backoffice', badge:'gb-backoffice' },
+};
+const CARD_DEFS = [
+  { key:'Refused',     label:'REFUSED',     cls:'c-refused' },
+  { key:'Mismatch',    label:'MISMATCHES',  cls:'c-mismatch' },
+  { key:'Billing',     label:'BILLING',     cls:'c-billing' },
+  { key:'Support',     label:'SUPPORT',     cls:'c-support' },
+  { key:'Sales',       label:'SALES',       cls:'c-sales' },
+  { key:'Escalations', label:'ESCALATIONS', cls:'c-escal' },
+  { key:'Back Office', label:'BACK OFFICE', cls:'c-backoffice' },
+];
+
+// Status panels — order and appearance
+const STATUS_PANELS = [
+  { key:'Available',  label:'Available',        headerCls:'ph-available' },
+  { key:'On Call',    label:'On Call',           headerCls:'ph-oncall' },
+  { key:'ACW',        label:'After Call Work',   headerCls:'ph-acw' },
+  { key:'Break',      label:'On Break',          headerCls:'ph-break' },
+  { key:'Lunch',      label:'At Lunch',          headerCls:'ph-lunch' },
+  { key:'Training',   label:'In Training',       headerCls:'ph-training' },
+  { key:'Logged Out', label:'Logged Out',        headerCls:'ph-loggedout' },
+  { key:'Refused',    label:'Refused',           headerCls:'ph-refused' },
+  { key:'Mismatch',   label:'⚠ Status Mismatch', headerCls:'ph-mismatch' },
+];
+
+const MVP_STATUSES = [
+  { label:'Available',      cls:'mvp-available' },
+  { label:'On a Call',      cls:'mvp-busy' },
+  { label:'Do Not Disturb', cls:'mvp-dnd' },
+  { label:'Offline',        cls:'mvp-offline' },
+];
+const CX_STATUSES = [
+  { label:'Available',  cls:'cx-available' },
+  { label:'On Call',    cls:'cx-oncall' },
+  { label:'ACW',        cls:'cx-acw' },
+  { label:'Break',      cls:'cx-break' },
+  { label:'Lunch',      cls:'cx-lunch' },
+  { label:'Training',   cls:'cx-training' },
+  { label:'Logged Out', cls:'cx-loggedout' },
+  { label:'Refused',    cls:'cx-refused' },
+];
+
+const FIRST = ['James','Maria','David','Sarah','Michael','Jessica','Robert','Ashley','John','Jennifer',
+  'William','Amanda','Richard','Melissa','Joseph','Stephanie','Thomas','Rebecca','Christopher','Laura',
+  'Charles','Sharon','Daniel','Cynthia','Matthew','Kathleen','Anthony','Amy','Mark','Angela',
+  'Donald','Shirley','Steven','Anna','Paul','Brenda','Andrew','Pamela','Joshua','Emma',
+  'Kenneth','Nicole','Kevin','Helen','Brian','Samantha','George','Katherine','Timothy','Christine'];
+const LAST = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Wilson','Martinez',
+  'Anderson','Taylor','Thomas','Hernandez','Moore','Jackson','White','Harris','Martin','Thompson'];
+function rand(a){return a[Math.floor(Math.random()*a.length)];}
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+
+// Generate agents
+const agents = [];
+const used = new Set();
+for(let i=0;i<60;i++){
+  let name; do{name=rand(FIRST)+' '+rand(LAST);}while(used.has(name)); used.add(name);
+  const group = GROUPS[Math.floor(i/12)];
+  const mvp = rand(MVP_STATUSES);
+  let cx;
+  if(mvp.label==='On a Call') cx=Math.random()<0.8?CX_STATUSES[1]:rand(CX_STATUSES);
+  else if(mvp.label==='Available') cx=Math.random()<0.7?CX_STATUSES[0]:rand(CX_STATUSES);
+  else if(mvp.label==='Offline') cx=Math.random()<0.6?CX_STATUSES[6]:rand(CX_STATUSES);
+  else cx=rand(CX_STATUSES);
+  const dur=randInt(1,95);
+  agents.push({id:i,name,group,mvp,cx,dur,since:new Date(Date.now()-dur*60000)});
+}
+
+function isMismatch(a){
+  const m=a.mvp.label,c=a.cx.label;
+  if(m==='On a Call'&&c!=='On Call'&&c!=='ACW') return true;
+  if(m==='Available'&&(c==='Break'||c==='Lunch'||c==='Logged Out')) return true;
+  if(m==='Offline'&&(c==='Available'||c==='On Call')) return true;
+  return false;
+}
+function fmtDur(m){return m<60?m+'m':Math.floor(m/60)+'h '+(m%60)+'m';}
+function fmtTime(d){return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
+
+// ── State ──
+let activeGroup = 'All';
+let sortCol = 'name', sortAsc = true;
+const collapsed = {}; // panel collapse state
+
+// ── Filter ──
+function getFiltered(){
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const mvpF   = document.getElementById('mvpFilter').value;
+  const cxF    = document.getElementById('cxFilter').value;
+  return agents.filter(a=>{
+    if(activeGroup==='Mismatch'&&!isMismatch(a)) return false;
+    if(activeGroup==='Refused'&&a.cx.label!=='Refused') return false;
+    if(activeGroup!=='All'&&activeGroup!=='Mismatch'&&activeGroup!=='Refused'&&a.group!==activeGroup) return false;
+    if(search&&!a.name.toLowerCase().includes(search)) return false;
+    if(mvpF&&a.mvp.label!==mvpF) return false;
+    if(cxF&&a.cx.label!==cxF) return false;
+    return true;
+  });
+}
+
+function clearFilters(){
+  document.getElementById('searchBox').value='';
+  document.getElementById('mvpFilter').value='';
+  document.getElementById('cxFilter').value='';
+  render();
+}
+
+// ── Render Cards ──
+function renderCards(){
+  document.getElementById('cardsRow').innerHTML = CARD_DEFS.map(d=>{
+    const count = d.key==='Mismatch'?agents.filter(isMismatch).length : d.key==='Refused'?agents.filter(a=>a.cx.label==='Refused').length : agents.filter(a=>a.group===d.key).length;
+    return `<div class="metric-card ${d.cls}${activeGroup===d.key?' active':''}" onclick="setGroup('${d.key}')">
+      <div class="metric-num ${d.cls}">${count}</div>
+      <div class="metric-label">${d.label}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render Tabs (Teams) ──
+function renderTabs(){
+  const teamTabs = [
+    {key:'All',label:'All Teams'},
+    ...GROUPS.map(g=>({key:g,label:g})),
+    {key:'Refused',label:'🚫 Refused'},
+    {key:'Mismatch',label:'⚠ Mismatches'},
+  ];
+  document.getElementById('tabBar').innerHTML = teamTabs.map(t=>{
+    const count = t.key==='All'?agents.length : t.key==='Mismatch'?agents.filter(isMismatch).length : t.key==='Refused'?agents.filter(a=>a.cx.label==='Refused').length : agents.filter(a=>a.group===t.key).length;
+    return `<div class="tab-item${activeGroup===t.key?' active':''}" onclick="setGroup('${t.key}')">
+      ${t.label}<span class="tab-count">${count}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Sort helper ──
+function sortRows(rows){
+  return [...rows].sort((a,b)=>{
+    let va,vb;
+    if(sortCol==='name'){va=a.name;vb=b.name;}
+    else if(sortCol==='group'){va=a.group;vb=b.group;}
+    else if(sortCol==='mvp'){va=a.mvp.label;vb=b.mvp.label;}
+    else if(sortCol==='dur'){va=a.dur;vb=b.dur;}
+    else{va=a.name;vb=b.name;}
+    if(typeof va==='number') return sortAsc?va-vb:vb-va;
+    return sortAsc?va.localeCompare(vb):vb.localeCompare(va);
+  });
+}
+function setSort(col){
+  if(sortCol===col) sortAsc=!sortAsc; else{sortCol=col;sortAsc=true;}
+  render();
+}
+function arw(col){
+  const a=sortCol===col?(sortAsc?'▲':'▼'):'▲';
+  return `<span class="sort-arrow${sortCol===col?' sorted':''}">${a}</span>`;
+}
+
+// ── Render Content (Status Panels) ──
+function renderContent(){
+  const filtered = getFiltered();
+  const showGroup = activeGroup==='All'||activeGroup==='Mismatch';
+
+  // Build panels
+  let html = '';
+  for(const panel of STATUS_PANELS){
+    let panelAgents;
+    if(panel.key==='Mismatch') panelAgents = filtered.filter(isMismatch);
+    else panelAgents = filtered.filter(a=>a.cx.label===panel.key);
+
+    if(panelAgents.length===0) continue; // skip empty panels
+
+    const sorted = sortRows(panelAgents);
+    const colKey = panel.key.replace(/\s+/g,'');
+    const isCollapsed = collapsed[colKey];
+
+    html += `<div class="status-panel">
+      <div class="panel-header ${panel.headerCls}" onclick="togglePanel('${colKey}')">
+        <div class="panel-header-left">
+          <span>${panel.label}</span>
+          <span class="panel-count">${panelAgents.length}</span>
+        </div>
+        <span class="panel-toggle">${isCollapsed?'▶ Show':'▼ Hide'}</span>
+      </div>`;
+
+    if(!isCollapsed){
+      html += `<div class="panel-body">
+        <table>
+          <thead><tr>
+            <th onclick="setSort('name')">Agent ${arw('name')}</th>
+            ${showGroup?`<th onclick="setSort('group')">Team ${arw('group')}</th>`:''}
+            <th onclick="setSort('mvp')">MVP Status ${arw('mvp')}</th>
+            <th>CXone State</th>
+            <th>Since</th>
+            <th onclick="setSort('dur')">Duration ${arw('dur')}</th>
+            <th>Flag</th>
+          </tr></thead>
+          <tbody>
+            ${sorted.map(a=>{
+              const mm=isMismatch(a);
+              const nonWork=['Break','Lunch','Logged Out','ACW'];
+              const durCls=nonWork.includes(a.cx.label)&&a.dur>30?'dur-long':nonWork.includes(a.cx.label)&&a.dur>15?'dur-medium':'dur-normal';
+              const gc=GROUP_COLORS[a.group];
+              return `<tr>
+                <td class="agent-name">${a.name}</td>
+                ${showGroup?`<td><span class="agent-group-badge ${gc.badge}">${a.group}</span></td>`:''}
+                <td><span class="pill ${a.mvp.cls}"><span class="pill-dot"></span>${a.mvp.label}</span></td>
+                <td><span class="pill ${a.cx.cls}"><span class="pill-dot"></span>${a.cx.label}</span></td>
+                <td style="color:#64748b;font-size:12px">${fmtTime(a.since)}</td>
+                <td class="${durCls}">${fmtDur(a.dur)}</td>
+                <td>${mm?'<span class="mismatch-pill">⚠ Mismatch</span>':''}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  if(!html) html = '<div class="empty-msg">No agents match current filters.</div>';
+
+  html += `<div class="legend">
+    <div class="leg-section">
+      <div class="leg-title">MVP (RingCentral)</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#16a34a"></span>Available</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#dc2626"></span>On a Call</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#ea580c"></span>Do Not Disturb</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#94a3b8"></span>Offline</div>
+    </div>
+    <div class="leg-section">
+      <div class="leg-title">CXone State (panels above)</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#15803d"></span>Available</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#dc2626"></span>On Call</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#6d28d9"></span>After Call Work</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#c2410c"></span>Break</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#a16207"></span>Lunch</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#1d4ed8"></span>Training</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#475569"></span>Logged Out</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#e11d48"></span>Refused</div>
+    </div>
+    <div class="leg-section">
+      <div class="leg-title">Flags</div>
+      <div class="leg-item"><span style="color:#d97706">⚠</span> MVP and CXone status disagree</div>
+      <div class="leg-item"><span class="leg-dot" style="background:#dc2626"></span> Away &gt;30 min (red duration)</div>
+    </div>
+  </div>`;
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function togglePanel(key){
+  collapsed[key] = !collapsed[key];
+  render();
+}
+
+function setGroup(g){
+  activeGroup=g;
+  render();
+}
+
+function render(){
+  renderCards();
+  renderTabs();
+  renderContent();
+}
+
+// ── Clock ──
+function tick(){ document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+setInterval(tick,1000); tick();
+
+// ── Auto-refresh every 3 minutes ──
+const REFRESH_INTERVAL = 3 * 60; // seconds
+let refreshSecsLeft = REFRESH_INTERVAL;
+function updateCountdown(){
+  const m = Math.floor(refreshSecsLeft/60);
+  const s = refreshSecsLeft%60;
+  const el = document.getElementById('refreshCountdown');
+  if(el) el.textContent = m>0?`${m}m ${s}s`:` ${s}s`;
+  refreshSecsLeft--;
+  if(refreshSecsLeft < 0){
+    refreshSecsLeft = REFRESH_INTERVAL;
+    refreshData();
+  }
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+// Simulates a data refresh (replace with real API calls when ready)
+function refreshData(){
+  for(let i=0;i<agents.length;i++){
+    if(Math.random()<0.15){ // ~15% of agents change state each refresh
+      const a=agents[i];
+      if(Math.random()<0.4) a.mvp=rand(MVP_STATUSES); else a.cx=rand(CX_STATUSES);
+      a.dur=randInt(1,95); a.since=new Date(Date.now()-a.dur*60000);
+    }
+    // Tick up duration for agents who didn't change
+    agents[i].dur = Math.min(agents[i].dur+3, 180);
+  }
+  render();
+}
+
+// ── Live micro-sim (small updates between refreshes) ──
+function sim(){
+  for(let i=0;i<randInt(1,2);i++){
+    const a=agents[randInt(0,59)];
+    if(Math.random()<0.5) a.mvp=rand(MVP_STATUSES); else a.cx=rand(CX_STATUSES);
+    a.dur=randInt(1,95); a.since=new Date(Date.now()-a.dur*60000);
+  }
+  render();
+}
+setInterval(sim,15000);
+
+render();
+</script>
+</body>
+</html>
