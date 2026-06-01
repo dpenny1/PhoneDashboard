@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Signing in...</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f5f7; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .box { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 40px 48px; text-align: center; max-width: 380px; width: 100%; }
+  .logo { width: 44px; height: 44px; border-radius: 10px; background: #1a56db; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 18px; margin: 0 auto 16px; }
+  h2 { font-size: 18px; color: #1a1a2e; margin-bottom: 8px; }
+  p  { font-size: 13px; color: #64748b; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #1a56db; border-radius: 50%; animation: spin .8s linear infinite; margin: 20px auto 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { color: #dc2626; font-size: 13px; margin-top: 16px; display: none; }
+  .back-link { display: inline-block; margin-top: 16px; font-size: 13px; color: #1a56db; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">RC</div>
+  <h2 id="heading">Signing you in...</h2>
+  <p id="subtext">Exchanging authorization code with RingCentral.</p>
+  <div class="spinner" id="spinner"></div>
+  <div class="error" id="errorMsg"></div>
+  <a class="back-link" href="index.html" id="backLink" style="display:none">← Back to dashboard</a>
+</div>
+
+<script type="module">
+import { rcExchangeCode } from './rc-auth.js';
+
+const params = new URLSearchParams(location.search);
+const code   = params.get('code');
+const state  = params.get('state');
+const error  = params.get('error');
+
+async function handleCallback() {
+  if (error) throw new Error(params.get('error_description') || error);
+  if (!code)  throw new Error('No authorization code received.');
+  const returnUrl = await rcExchangeCode(code, state);
+  document.getElementById('heading').textContent = 'Signed in!';
+  document.getElementById('subtext').textContent  = 'Redirecting you back...';
+  document.getElementById('spinner').style.borderTopColor = '#15803d';
+  setTimeout(() => { location.href = returnUrl; }, 1000);
+}
+
+handleCallback().catch(err => {
+  document.getElementById('heading').textContent  = 'Sign-in failed';
+  document.getElementById('subtext').textContent   = 'Something went wrong during authentication.';
+  document.getElementById('spinner').style.display = 'none';
+  const em = document.getElementById('errorMsg');
+  em.textContent = err.message;
+  em.style.display = 'block';
+  document.getElementById('backLink').style.display = 'inline-block';
+});
+</script>
+</body>
+</html>
