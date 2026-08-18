@@ -1,0 +1,26 @@
+[build]
+  # No build step needed — static HTML files deploy as-is
+
+[[redirects]]
+  from   = "/cx/*"
+  to     = "/.netlify/functions/cx-proxy"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/sync/*"
+  to     = "/.netlify/functions/cx-proxy"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/enforce/*"
+  to     = "/.netlify/functions/cx-proxy"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/health"
+  to     = "/.netlify/functions/cx-proxy"
+  status = 200
+  force  = true
