@@ -11,12 +11,15 @@ export async function cxLogin(username, password) {
   const resp = await fetch(`${CX_BASE}/authentication/v1/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', username, password, scope: 'AgentApi' }),
+    body: new URLSearchParams({ grant_type: 'password', username, password }),
   });
 
   if (!resp.ok) {
-    const e = await resp.json().catch(() => ({}));
-    throw new Error(e.error_description || `CXone login failed (${resp.status})`);
+    const text = await resp.text().catch(() => '');
+    let e = {};
+    try { e = JSON.parse(text); } catch {}
+    console.error('CXone auth response:', resp.status, text);
+    throw new Error(e.error_description || e.error || e.message || `CXone login failed (${resp.status}): ${text.slice(0,200)}`);
   }
 
   const data = await resp.json();
