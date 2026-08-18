@@ -5,6 +5,20 @@
 //   RC_CLIENT_ID     = dwLXTnila2ydldmUAljjhn
 //   CX_BASE_URL      = https://na1.nice-incontact.com
 //   ALLOWED_ORIGIN   = https://dpenny1.github.io
+//   CX_SYSTEM_TOKEN  = (CXone token for the system/admin account used for enforcement)
+//
+// KV Namespace to bind in Cloudflare dashboard:
+//   Binding name: ENFORCE_KV   (stores warning state per agent)
+//
+// Cron trigger to add in Cloudflare dashboard (wrangler.toml or UI):
+//   */5 * * * *   (runs every 5 minutes)
+//
+// wrangler.toml example:
+//   [triggers]
+//   crons = ["*/5 * * * *"]
+//   [[kv_namespaces]]
+//   binding = "ENFORCE_KV"
+//   id = "YOUR_KV_NAMESPACE_ID"
 
 const CORS_HEADERS = (origin) => ({
   'Access-Control-Allow-Origin':  origin || '*',
@@ -67,12 +81,32 @@ export default {
       return handleStatusSync(request, env, allowed);
     }
 
+    // GET /enforce/status — get current enforcement warnings (for supervisor dashboard)
+    if (url.pathname === '/enforce/status' && request.method === 'GET') {
+      return handleEnforceStatus(request, env, allowed);
+    }
+
+    // POST /enforce/config — save time window config
+    if (url.pathname === '/enforce/config' && request.method === 'POST') {
+      return handleEnforceConfig(request, env, allowed);
+    }
+
+    // GET /enforce/config — get time window config
+    if (url.pathname === '/enforce/config' && request.method === 'GET') {
+      return handleGetEnforceConfig(request, env, allowed);
+    }
+
     // Health check
     if (url.pathname === '/health') {
       return json({ status: 'ok', ts: new Date().toISOString() }, 200, allowed);
     }
 
     return error('Not found', 404, allowed);
+  },
+
+  // ── Cron: runs every 5 minutes ──────────────────────────────────────────────
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runEnforcement(env));
   },
 };
 
@@ -214,4 +248,191 @@ async function handleStatusSync(request, env, origin) {
   }
 
   return json({ success: true, cxState, applied: presence }, 200, origin);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── TIME-WINDOW ENFORCEMENT ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Phase 1 — Warn:    Send CXone notification to agent (warn_minutes before cutoff)
+// Phase 2 — Alert:   Store alert in KV so supervisor dashboard can surface it
+// Phase 3 — Logout:  Force-logout via CXone API (logout_minutes after warning)
+//
+// Default config (overridden via /enforce/config):
+const DEFAULT_CONFIG = {
+  enabled:        true,
+  startHour:      7,    // 7:00 AM
+  endHour:        19,   // 7:00 PM
+  timezone:       'America/Chicago',
+  warnMinutes:    15,   // warn this many minutes before cutoff
+  logoutMinutes:  15,   // force logout this many minutes after warning
+  weekendsOff:    true, // no contact center on Sat/Sun
+};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function getNowInTZ(tz) {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+}
+
+function isWithinWindow(config) {
+  const now = getNowInTZ(config.timezone);
+  const day = now.getDay(); // 0=Sun, 6=Sat
+  if (config.weekendsOff && (day === 0 || day === 6)) return false;
+  const h = now.getHours() + now.getMinutes() / 60;
+  return h >= config.startHour && h < config.endHour;
+}
+
+function minutesUntilCutoff(config) {
+  const now = getNowInTZ(config.timezone);
+  const cutoffToday = new Date(now);
+  cutoffToday.setHours(config.endHour, 0, 0, 0);
+  return (cutoffToday - now) / 60000;
+}
+
+// ── CXone: Send notification to agent ────────────────────────────────────────
+async function cxNotifyAgent(agentId, message, systemToken, cxBase) {
+  const resp = await fetch(`${cxBase}/inContactAPI/services/v28.0/agents/${agentId}/message`, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + systemToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+  });
+  return resp.ok;
+}
+
+// ── CXone: Force logout agent ─────────────────────────────────────────────────
+async function cxForceLogout(agentId, systemToken, cxBase) {
+  const resp = await fetch(`${cxBase}/inContactAPI/services/v28.0/agents/${agentId}/logout`, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + systemToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ forceLogout: true }),
+  });
+  return resp.ok;
+}
+
+// ── Main enforcement cron function ────────────────────────────────────────────
+async function runEnforcement(env) {
+  const kv          = env.ENFORCE_KV;
+  const systemToken = env.CX_SYSTEM_TOKEN;
+  const cxBase      = env.CX_BASE_URL || 'https://na1.nice-incontact.com';
+
+  if (!kv || !systemToken) {
+    console.log('Enforcement: ENFORCE_KV or CX_SYSTEM_TOKEN not configured, skipping.');
+    return;
+  }
+
+  // Load config
+  const configStr = await kv.get('enforce_config');
+  const config = configStr ? JSON.parse(configStr) : DEFAULT_CONFIG;
+  if (!config.enabled) return;
+
+  const inWindow  = isWithinWindow(config);
+  const minsLeft  = minutesUntilCutoff(config);
+  const now       = Date.now();
+
+  // Fetch all logged-in agents
+  const agentsResp = await fetch(
+    `${cxBase}/inContactAPI/services/v28.0/agents/states?fields=agentId,agentName,currentState,isActive`,
+    { headers: { Authorization: 'Bearer ' + systemToken } }
+  );
+  if (!agentsResp.ok) { console.error('Enforcement: failed to fetch agents'); return; }
+
+  const data = await agentsResp.json();
+  const loggedInAgents = (data.agentStateList || []).filter(a =>
+    a.isActive && a.currentState !== 'Logged Out'
+  );
+
+  console.log(`Enforcement: ${loggedInAgents.length} agents logged in. inWindow=${inWindow} minsLeft=${minsLeft.toFixed(1)}`);
+
+  for (const agent of loggedInAgents) {
+    const agentId  = agent.agentId;
+    const kvKey    = `enforce_${agentId}`;
+    const stateStr = await kv.get(kvKey);
+    const state    = stateStr ? JSON.parse(stateStr) : null;
+
+    if (inWindow) {
+      // Inside window — approaching cutoff?
+      if (minsLeft <= config.warnMinutes && minsLeft > 0) {
+        // Phase 1: Warn (only once per session)
+        if (!state?.warnedAt) {
+          const msg = `⚠ Your contact center session will end in ${Math.round(minsLeft)} minute(s). Please wrap up your current call.`;
+          await cxNotifyAgent(agentId, msg, systemToken, cxBase);
+          // Phase 2: Alert supervisor via KV
+          await kv.put(kvKey, JSON.stringify({
+            agentId, agentName: agent.agentName,
+            warnedAt: now,
+            phase: 'warned',
+          }), { expirationTtl: 3600 });
+          console.log(`Enforcement: warned agent ${agent.agentName}`);
+        }
+      } else if (minsLeft > config.warnMinutes && state) {
+        // Back inside safe window — clear any pending state
+        await kv.delete(kvKey);
+      }
+    } else {
+      // Outside window (or weekend)
+      if (!state?.warnedAt) {
+        // Missed the pre-window warning (agent logged in after hours) — warn immediately
+        const msg = `⚠ The contact center is now closed. You will be logged out automatically in ${config.logoutMinutes} minute(s).`;
+        await cxNotifyAgent(agentId, msg, systemToken, cxBase);
+        await kv.put(kvKey, JSON.stringify({
+          agentId, agentName: agent.agentName,
+          warnedAt: now,
+          phase: 'warned',
+        }), { expirationTtl: 3600 });
+        console.log(`Enforcement: warned after-hours agent ${agent.agentName}`);
+
+      } else if (state.phase === 'warned') {
+        const minsSinceWarn = (now - state.warnedAt) / 60000;
+        if (minsSinceWarn >= config.logoutMinutes) {
+          // Phase 3: Force logout
+          const success = await cxForceLogout(agentId, systemToken, cxBase);
+          await kv.put(kvKey, JSON.stringify({
+            ...state, phase: 'loggedout', loggedOutAt: now,
+          }), { expirationTtl: 3600 });
+          console.log(`Enforcement: force-logged out ${agent.agentName} (success=${success})`);
+        }
+        // else still in warning window — leave in place, supervisor can see it
+      }
+    }
+  }
+
+  // Clean up KV entries for agents who are now logged out
+  const activeIds = new Set(loggedInAgents.map(a => String(a.agentId)));
+  const { keys } = await kv.list({ prefix: 'enforce_' });
+  for (const key of keys) {
+    const id = key.name.replace('enforce_', '');
+    if (!activeIds.has(id)) await kv.delete(key.name);
+  }
+}
+
+// ── HTTP: Get current enforcement alerts for supervisor dashboard ─────────────
+async function handleEnforceStatus(request, env, origin) {
+  const kv = env.ENFORCE_KV;
+  if (!kv) return json({ alerts: [] }, 200, origin);
+
+  const { keys } = await kv.list({ prefix: 'enforce_' });
+  const alerts = [];
+  for (const key of keys) {
+    const val = await kv.get(key.name);
+    if (val) alerts.push(JSON.parse(val));
+  }
+  return json({ alerts }, 200, origin);
+}
+
+// ── HTTP: Save time window config ─────────────────────────────────────────────
+async function handleEnforceConfig(request, env, origin) {
+  const kv = env.ENFORCE_KV;
+  if (!kv) return error('ENFORCE_KV not configured', 500, origin);
+  let body;
+  try { body = await request.json(); } catch { return error('Invalid JSON', 400, origin); }
+  await kv.put('enforce_config', JSON.stringify({ ...DEFAULT_CONFIG, ...body }));
+  return json({ success: true }, 200, origin);
+}
+
+// ── HTTP: Get time window config ──────────────────────────────────────────────
+async function handleGetEnforceConfig(request, env, origin) {
+  const kv = env.ENFORCE_KV;
+  if (!kv) return json(DEFAULT_CONFIG, 200, origin);
+  const val = await kv.get('enforce_config');
+  return json(val ? JSON.parse(val) : DEFAULT_CONFIG, 200, origin);
 }

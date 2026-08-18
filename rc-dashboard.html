@@ -26,6 +26,7 @@
   .live-pill { background: #14532d; color: #4ade80; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; display: flex; align-items: center; gap: 5px; }
   .live-dot { width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: blink 1.5s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  @keyframes spin  { to { transform: rotate(360deg); } }
 
   /* ── Metric Cards ── */
   .cards-row { display: flex; background: #fff; border-bottom: 1px solid #e2e8f0; overflow-x: auto; }
@@ -175,6 +176,124 @@
   .leg-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#94a3b8; margin-bottom:2px; }
   .leg-item { display:flex; align-items:center; gap:6px; color:#475569; }
   .leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  /* ── Rules button in nav ── */
+  .btn-rules {
+    display: flex; align-items: center; gap: 6px;
+    background: #2d3148; border: 1px solid #3d4268; color: #e2e8f0;
+    padding: 4px 12px; border-radius: 5px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-rules:hover { background: #3d4268; }
+  .rules-badge {
+    background: #dc2626; color: #fff; font-size: 10px; font-weight: 700;
+    padding: 1px 5px; border-radius: 999px; min-width: 16px; text-align: center;
+    display: none;
+  }
+
+  /* ── Alert banner ── */
+  .alert-banner {
+    display: none; align-items: center; gap: 10px;
+    background: #fef3c7; border-bottom: 1px solid #fde68a;
+    padding: 8px 20px; font-size: 13px; color: #92400e;
+  }
+  .alert-banner.visible { display: flex; }
+  .alert-banner strong { font-weight: 700; }
+  .alert-banner-dismiss { margin-left: auto; cursor: pointer; font-size: 11px; color: #b45309; text-decoration: underline; }
+
+  /* ── Rules slide-out panel ── */
+  .rules-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 300;
+  }
+  .rules-overlay.open { display: block; }
+  .rules-panel {
+    position: fixed; top: 0; right: -480px; width: 460px; height: 100vh;
+    background: #fff; box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+    z-index: 301; display: flex; flex-direction: column;
+    transition: right 0.25s ease;
+  }
+  .rules-panel.open { right: 0; }
+  .rules-panel-header {
+    padding: 16px 20px; border-bottom: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: space-between;
+    background: #1a1a2e; color: #fff;
+  }
+  .rules-panel-title { font-size: 15px; font-weight: 700; }
+  .rules-close { background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; line-height: 1; }
+  .rules-close:hover { color: #fff; }
+  .rules-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .rules-footer { padding: 14px 20px; border-top: 1px solid #e2e8f0; background: #f8faff; }
+
+  /* Rule card */
+  .rule-card {
+    background: #f8faff; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 14px; margin-bottom: 10px;
+  }
+  .rule-card.active-rule { border-left: 3px solid #1a56db; }
+  .rule-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .rule-name-input {
+    font-size: 13px; font-weight: 600; color: #1a1a2e; border: none;
+    background: transparent; outline: none; width: 100%;
+  }
+  .rule-name-input::placeholder { color: #94a3b8; font-weight: 400; }
+  .rule-toggle { flex-shrink: 0; cursor: pointer; }
+  .rule-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .rule-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .rule-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .rule-select, .rule-input {
+    width: 100%; border: 1px solid #e2e8f0; border-radius: 5px;
+    padding: 6px 8px; font-size: 12px; color: #1a1a2e;
+    background: #fff; outline: none;
+  }
+  .rule-select:focus, .rule-input:focus { border-color: #1a56db; }
+  .rule-delete { background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+  .rule-delete:hover { background: #fee2e2; color: #dc2626; }
+  .rule-firing { font-size: 11px; color: #dc2626; font-weight: 600; margin-top: 6px; display: none; }
+  .rule-firing.on { display: block; }
+
+  /* Add rule button */
+  .btn-add-rule {
+    width: 100%; padding: 10px; border: 1.5px dashed #cbd5e1; border-radius: 8px;
+    background: transparent; color: #64748b; font-size: 13px; cursor: pointer;
+    transition: all 0.15s; margin-top: 4px;
+  }
+  .btn-add-rule:hover { border-color: #1a56db; color: #1a56db; background: #f0f4ff; }
+
+  /* Save button */
+  .btn-save-rules {
+    width: 100%; padding: 10px; border-radius: 7px; border: none;
+    background: #1a56db; color: #fff; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn-save-rules:hover { background: #1e40af; }
+
+  /* Alerted agent row */
+  tbody tr.rule-alert-high { background: #fff1f2 !important; }
+  tbody tr.rule-alert-high:hover { background: #ffe4e6 !important; }
+  tbody tr.rule-alert-med  { background: #fefce8 !important; }
+  tbody tr.rule-alert-med:hover  { background: #fef9c3 !important; }
+  .alert-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #fee2e2; color: #dc2626; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 3px;
+  }
+  .alert-pill.warn { background: #fef3c7; color: #92400e; }
+
+  /* Toggle switch */
+  .toggle { position: relative; display: inline-block; width: 34px; height: 18px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #cbd5e1; border-radius: 999px; transition: .2s;
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute;
+    height: 12px; width: 12px; left: 3px; bottom: 3px;
+    background: #fff; border-radius: 50%; transition: .2s;
+  }
+  .toggle input:checked + .toggle-slider { background: #1a56db; }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(16px); }
 </style>
 </head>
 <body>
@@ -186,10 +305,33 @@
     <span class="nav-title">RingCentral Supervisor Dashboard</span>
   </div>
   <div class="nav-right">
+    <button class="btn-rules" onclick="openRules()">
+      ⚙ Rules <span class="rules-badge" id="rulesBadge"></span>
+    </button>
     <span class="live-pill"><span class="live-dot"></span>LIVE (Mock)</span>
     <span class="nav-time" id="clock"></span>
   </div>
 </nav>
+
+<!-- Alert Banner -->
+<div class="alert-banner" id="alertBanner">
+  <span>🔔</span>
+  <span id="alertBannerText"><strong>0 agents</strong> are triggering alert rules.</span>
+  <span class="alert-banner-dismiss" onclick="document.getElementById('alertBanner').classList.remove('visible')">Dismiss</span>
+</div>
+
+<!-- Rules Overlay + Panel -->
+<div class="rules-overlay" id="rulesOverlay" onclick="closeRules()"></div>
+<div class="rules-panel" id="rulesPanel">
+  <div class="rules-panel-header">
+    <span class="rules-panel-title">⚙ Alert Rules</span>
+    <button class="rules-close" onclick="closeRules()">✕</button>
+  </div>
+  <div class="rules-body" id="rulesBody"></div>
+  <div class="rules-footer">
+    <button class="btn-save-rules" onclick="saveRules()">Save Rules</button>
+  </div>
+</div>
 
 <!-- Metric Cards -->
 <div class="cards-row" id="cardsRow"></div>
@@ -223,6 +365,12 @@
   </select>
   <span class="clear-link" onclick="clearFilters()">Clear</span>
   <span style="margin-left:auto;font-size:11px;color:#94a3b8">Auto-refresh: <span id="refreshCountdown"></span></span>
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(248,250,252,0.85);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+  <div style="width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#1a56db;border-radius:50%;animation:spin .8s linear infinite"></div>
+  <div style="font-size:14px;color:#64748b;font-weight:500">Loading agent data...</div>
 </div>
 
 <!-- Content: status panels -->
@@ -261,47 +409,170 @@ const STATUS_PANELS = [
   { key:'Mismatch',   label:'⚠ Status Mismatch', headerCls:'ph-mismatch' },
 ];
 
-const MVP_STATUSES = [
-  { label:'Available',      cls:'mvp-available' },
-  { label:'On a Call',      cls:'mvp-busy' },
-  { label:'Do Not Disturb', cls:'mvp-dnd' },
-  { label:'Offline',        cls:'mvp-offline' },
-];
-const CX_STATUSES = [
-  { label:'Available',  cls:'cx-available' },
-  { label:'On Call',    cls:'cx-oncall' },
-  { label:'ACW',        cls:'cx-acw' },
-  { label:'Break',      cls:'cx-break' },
-  { label:'Lunch',      cls:'cx-lunch' },
-  { label:'Training',   cls:'cx-training' },
-  { label:'Logged Out', cls:'cx-loggedout' },
-  { label:'Refused',    cls:'cx-refused' },
-];
+// ── MVP status lookup ──
+const MVP_CLS = {
+  'Available':      'mvp-available',
+  'On a Call':      'mvp-busy',
+  'Do Not Disturb': 'mvp-dnd',
+  'Offline':        'mvp-offline',
+};
+const CX_CLS = {
+  'Available':  'cx-available',
+  'On Call':    'cx-oncall',
+  'ACW':        'cx-acw',
+  'Break':      'cx-break',
+  'Lunch':      'cx-lunch',
+  'Training':   'cx-training',
+  'Logged Out': 'cx-loggedout',
+  'Refused':    'cx-refused',
+};
 
-const FIRST = ['James','Maria','David','Sarah','Michael','Jessica','Robert','Ashley','John','Jennifer',
-  'William','Amanda','Richard','Melissa','Joseph','Stephanie','Thomas','Rebecca','Christopher','Laura',
-  'Charles','Sharon','Daniel','Cynthia','Matthew','Kathleen','Anthony','Amy','Mark','Angela',
-  'Donald','Shirley','Steven','Anna','Paul','Brenda','Andrew','Pamela','Joshua','Emma',
-  'Kenneth','Nicole','Kevin','Helen','Brian','Samantha','George','Katherine','Timothy','Christine'];
-const LAST = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Wilson','Martinez',
-  'Anderson','Taylor','Thomas','Hernandez','Moore','Jackson','White','Harris','Martin','Thompson'];
-function rand(a){return a[Math.floor(Math.random()*a.length)];}
-function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function mvpLabel(ext) {
+  if (ext.telephonyStatus === 'CallConnected') return 'On a Call';
+  const dnd = ext.dndStatus || '';
+  if (dnd === 'DoNotAcceptAnyCalls' || dnd === 'DoNotAcceptDepartmentCalls') return 'Do Not Disturb';
+  if ((ext.presenceStatus || ext.userStatus) === 'Busy') return 'On a Call';
+  if (ext.presenceStatus === 'Available' || ext.userStatus === 'Available') return 'Available';
+  return 'Offline';
+}
 
-// Generate agents
-const agents = [];
-const used = new Set();
-for(let i=0;i<60;i++){
-  let name; do{name=rand(FIRST)+' '+rand(LAST);}while(used.has(name)); used.add(name);
-  const group = GROUPS[Math.floor(i/12)];
-  const mvp = rand(MVP_STATUSES);
-  let cx;
-  if(mvp.label==='On a Call') cx=Math.random()<0.8?CX_STATUSES[1]:rand(CX_STATUSES);
-  else if(mvp.label==='Available') cx=Math.random()<0.7?CX_STATUSES[0]:rand(CX_STATUSES);
-  else if(mvp.label==='Offline') cx=Math.random()<0.6?CX_STATUSES[6]:rand(CX_STATUSES);
-  else cx=rand(CX_STATUSES);
-  const dur=randInt(1,95);
-  agents.push({id:i,name,group,mvp,cx,dur,since:new Date(Date.now()-dur*60000)});
+function cxLabel(state) {
+  // Normalize CXone state names to our display labels
+  const map = {
+    'available':   'Available',
+    'oncall':      'On Call',
+    'on call':     'On Call',
+    'acw':         'ACW',
+    'break':       'Break',
+    'lunch':       'Lunch',
+    'training':    'Training',
+    'loggedout':   'Logged Out',
+    'logged out':  'Logged Out',
+    'refused':     'Refused',
+  };
+  return map[(state||'').toLowerCase()] || state || 'Logged Out';
+}
+
+// ── Live agent data (populated by fetchData) ──
+let agents = [];
+
+// ── Auth + data loading ───────────────────────────────────────
+
+async function checkAuth() {
+  const { isLoggedIn }   = await import('./rc-auth.js');
+  const { cxIsLoggedIn } = await import('./cx-auth.js');
+  if (!isLoggedIn() || !cxIsLoggedIn()) {
+    // Not authenticated — send back to login
+    location.href = 'index.html';
+  }
+}
+
+async function fetchData() {
+  showLoadingState(true);
+  try {
+    const [rcData, cxData] = await Promise.all([fetchRC(), fetchCX()]);
+    agents = mergeAgents(rcData, cxData);
+    render();
+  } catch(e) {
+    console.error('Data fetch failed:', e);
+    showError(e.message);
+  } finally {
+    showLoadingState(false);
+  }
+}
+
+async function fetchRC() {
+  const { rcFetch } = await import('./rc-auth.js');
+  // Fetch all extensions + their presence
+  const [extResp, presResp] = await Promise.all([
+    rcFetch('/account/~/extension?perPage=200&type=User&status=Enabled'),
+    rcFetch('/account/~/presence?detailedTelephonyState=true&sipData=true'),
+  ]);
+  // Build a map of extensionId → presence
+  const presMap = {};
+  (presResp.records || []).forEach(p => { presMap[p.extension?.id] = p; });
+  return (extResp.records || []).map(ext => ({
+    rcId:      ext.id,
+    name:      ((ext.contact?.firstName || '') + ' ' + (ext.contact?.lastName || '')).trim(),
+    email:     ext.contact?.email || '',
+    extension: ext.extensionNumber,
+    mvpLabel:  mvpLabel(presMap[ext.id] || {}),
+  }));
+}
+
+async function fetchCX() {
+  const { fetchAgentStates } = await import('./cx-auth.js');
+  const data = await fetchAgentStates();
+  return (data.agentStateList || []).map(a => ({
+    cxId:    a.agentId,
+    name:    a.agentName || '',
+    cxState: cxLabel(a.currentState),
+    team:    a.teamName  || 'Unassigned',
+    durSec:  a.currentStateDuration || 0,
+  }));
+}
+
+function mergeAgents(rcList, cxList) {
+  // Match RC extensions to CXone agents by name (normalize for comparison)
+  const normalize = s => s.toLowerCase().replace(/[^a-z]/g,'');
+  const cxByName = {};
+  cxList.forEach(cx => { cxByName[normalize(cx.name)] = cx; });
+
+  const merged = [];
+  rcList.forEach((rc, i) => {
+    const cx = cxByName[normalize(rc.name)];
+    const durMin = cx ? Math.round(cx.durSec / 60) : 0;
+    merged.push({
+      id:    i,
+      name:  rc.name,
+      group: cx?.team || 'Unassigned',
+      mvp:   { label: rc.mvpLabel,           cls: MVP_CLS[rc.mvpLabel]          || 'mvp-offline' },
+      cx:    { label: cx?.cxState || 'Logged Out', cls: CX_CLS[cx?.cxState || 'Logged Out'] || 'cx-loggedout' },
+      dur:   durMin,
+      since: new Date(Date.now() - durMin * 60000),
+      rcId:  rc.rcId,
+      cxId:  cx?.cxId,
+    });
+  });
+
+  // Also add any CXone agents not found in RC (agents without RC accounts)
+  const rcNames = new Set(rcList.map(r => normalize(r.name)));
+  cxList.filter(cx => !rcNames.has(normalize(cx.name))).forEach((cx, i) => {
+    const durMin = Math.round(cx.durSec / 60);
+    merged.push({
+      id:    rcList.length + i,
+      name:  cx.name,
+      group: cx.team || 'Unassigned',
+      mvp:   { label: 'Offline', cls: 'mvp-offline' },
+      cx:    { label: cx.cxState, cls: CX_CLS[cx.cxState] || 'cx-loggedout' },
+      dur:   durMin,
+      since: new Date(Date.now() - durMin * 60000),
+      cxId:  cx.cxId,
+    });
+  });
+
+  return merged;
+}
+
+// ── Dynamic group list from real data ──
+function getLiveGroups() {
+  const teams = [...new Set(agents.map(a => a.group))].sort();
+  return teams;
+}
+
+function showLoadingState(loading) {
+  const el = document.getElementById('loadingOverlay');
+  if (el) el.style.display = loading ? 'flex' : 'none';
+}
+
+function showError(msg) {
+  document.getElementById('content').innerHTML = `
+    <div style="text-align:center;padding:40px;color:#dc2626;background:#fff;border-radius:8px;border:1px solid #fee2e2;margin:20px 0">
+      <div style="font-size:24px;margin-bottom:8px">⚠</div>
+      <div style="font-weight:600;margin-bottom:4px">Failed to load data</div>
+      <div style="font-size:13px;color:#64748b">${msg}</div>
+      <button onclick="fetchData()" style="margin-top:16px;padding:8px 20px;background:#1a56db;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">Retry</button>
+    </div>`;
 }
 
 function isMismatch(a){
@@ -436,14 +707,19 @@ function renderContent(){
               const nonWork=['Break','Lunch','Logged Out','ACW'];
               const durCls=nonWork.includes(a.cx.label)&&a.dur>30?'dur-long':nonWork.includes(a.cx.label)&&a.dur>15?'dur-medium':'dur-normal';
               const gc=GROUP_COLORS[a.group];
-              return `<tr>
+              const fired=getFiredRules(a);
+              const rowCls=fired.length?(fired.some(r=>r.severity==='high')?'rule-alert-high':'rule-alert-med'):'';
+              return `<tr class="${rowCls}">
                 <td class="agent-name">${a.name}</td>
                 ${showGroup?`<td><span class="agent-group-badge ${gc.badge}">${a.group}</span></td>`:''}
                 <td><span class="pill ${a.mvp.cls}"><span class="pill-dot"></span>${a.mvp.label}</span></td>
                 <td><span class="pill ${a.cx.cls}"><span class="pill-dot"></span>${a.cx.label}</span></td>
                 <td style="color:#64748b;font-size:12px">${fmtTime(a.since)}</td>
                 <td class="${durCls}">${fmtDur(a.dur)}</td>
-                <td>${mm?'<span class="mismatch-pill">⚠ Mismatch</span>':''}</td>
+                <td>
+                  ${mm?'<span class="mismatch-pill">⚠ Mismatch</span>':''}
+                  ${fired.map(r=>`<span class="alert-pill ${r.severity==='high'?'':'warn'}" title="${r.name}">🔔 ${r.name}</span>`).join(' ')}
+                </td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -498,6 +774,234 @@ function render(){
   renderCards();
   renderTabs();
   renderContent();
+  evalRules();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── RULES ENGINE ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+
+const DEFAULT_RULES = [
+  { id:1, name:'Break > 30 min',     enabled:true,  cxState:'Break',      minDur:30, team:'All', severity:'high' },
+  { id:2, name:'Lunch > 60 min',     enabled:true,  cxState:'Lunch',      minDur:60, team:'All', severity:'high' },
+  { id:3, name:'Status Mismatch',    enabled:true,  cxState:'Mismatch',   minDur:0,  team:'All', severity:'high' },
+  { id:4, name:'ACW > 10 min',       enabled:true,  cxState:'ACW',        minDur:10, team:'All', severity:'warn' },
+  { id:5, name:'Refused call',       enabled:true,  cxState:'Refused',    minDur:0,  team:'All', severity:'high' },
+  { id:6, name:'Training > 120 min', enabled:false, cxState:'Training',   minDur:120,team:'All', severity:'warn' },
+];
+
+let rules = JSON.parse(localStorage.getItem('supervisor_rules') || 'null') || DEFAULT_RULES;
+let nextId = Math.max(...rules.map(r=>r.id)) + 1;
+
+// Check which rules an agent is firing
+function getFiredRules(agent) {
+  return rules.filter(r => {
+    if (!r.enabled) return false;
+    if (r.team !== 'All' && r.team !== agent.group) return false;
+    if (r.cxState === 'Mismatch') return isMismatch(agent) && agent.dur >= r.minDur;
+    return agent.cx.label === r.cxState && agent.dur >= r.minDur;
+  });
+}
+
+// Evaluate all rules and update banner + badge
+function evalRules() {
+  const alertedAgents = agents.filter(a => getFiredRules(a).length > 0);
+  const count = alertedAgents.length;
+
+  // Badge
+  const badge = document.getElementById('rulesBadge');
+  if (count > 0) { badge.textContent = count; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
+
+  // Banner
+  const banner = document.getElementById('alertBanner');
+  const bannerText = document.getElementById('alertBannerText');
+  if (count > 0) {
+    banner.classList.add('visible');
+    const names = alertedAgents.slice(0, 3).map(a => a.name.split(' ')[0]).join(', ');
+    const more = count > 3 ? ` +${count-3} more` : '';
+    bannerText.innerHTML = `<strong>${count} agent${count>1?'s':''}</strong> triggering alert rules: ${names}${more}`;
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+
+// ── Rules Panel UI ────────────────────────────────────────────
+const CX_STATE_OPTIONS = ['Available','On Call','ACW','Break','Lunch','Training','Logged Out','Refused','Mismatch'];
+const TEAM_OPTIONS = ['All', ...GROUPS];
+
+// ── Enforce config (stored in localStorage, synced to worker when saved) ──
+const ENFORCE_DEFAULTS = { enabled:true, startHour:7, endHour:19, warnMinutes:15, logoutMinutes:15, weekendsOff:true };
+
+function getEnforceConfig() {
+  return JSON.parse(localStorage.getItem('enforce_config') || JSON.stringify(ENFORCE_DEFAULTS));
+}
+
+function saveEnforceConfig() {
+  const start   = document.getElementById('enforceStart')?.value || '07:00';
+  const end     = document.getElementById('enforceEnd')?.value   || '19:00';
+  const cfg = {
+    enabled:       document.getElementById('enforceEnabled')?.checked ?? true,
+    startHour:     parseInt(start.split(':')[0]),
+    endHour:       parseInt(end.split(':')[0]),
+    warnMinutes:   parseInt(document.getElementById('enforceWarn')?.value   || 15),
+    logoutMinutes: parseInt(document.getElementById('enforceLogout')?.value || 15),
+    weekendsOff:   document.getElementById('enforceWeekends')?.checked ?? true,
+    timezone:      'America/Chicago',
+  };
+  localStorage.setItem('enforce_config', JSON.stringify(cfg));
+  // Also push to worker if available (non-blocking)
+  // fetch(`${WORKER_URL}/enforce/config`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(cfg) }).catch(()=>{});
+}
+
+function openRules() {
+  renderRulesPanel();
+  document.getElementById('rulesOverlay').classList.add('open');
+  document.getElementById('rulesPanel').classList.add('open');
+}
+
+function closeRules() {
+  document.getElementById('rulesOverlay').classList.remove('open');
+  document.getElementById('rulesPanel').classList.remove('open');
+}
+
+function renderRulesPanel() {
+  const firedCounts = {};
+  rules.forEach(r => { firedCounts[r.id] = agents.filter(a => getFiredRules(a).some(f=>f.id===r.id)).length; });
+
+  const cfg = getEnforceConfig();
+
+  document.getElementById('rulesBody').innerHTML = `
+
+    <!-- ── Time Window Enforcement ── -->
+    <div style="background:#1a1a2e;border-radius:8px;padding:14px;margin-bottom:18px;color:#e2e8f0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:700">⏰ Auto-Logout Enforcement</span>
+        <label class="toggle" title="${cfg.enabled?'Enabled':'Disabled'}">
+          <input type="checkbox" id="enforceEnabled" ${cfg.enabled?'checked':''} onchange="saveEnforceConfig()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;line-height:1.5">
+        Agents logged into CXone outside these hours will be warned, flagged to you, then auto-logged out.
+        Runs automatically every 5 minutes via the worker.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div class="rule-label" style="color:#94a3b8">Start Time</div>
+          <input class="rule-input" id="enforceStart" type="time"
+            value="${String(cfg.startHour).padStart(2,'0')}:00" onchange="saveEnforceConfig()">
+        </div>
+        <div>
+          <div class="rule-label" style="color:#94a3b8">End Time</div>
+          <input class="rule-input" id="enforceEnd" type="time"
+            value="${String(cfg.endHour).padStart(2,'0')}:00" onchange="saveEnforceConfig()">
+        </div>
+        <div>
+          <div class="rule-label" style="color:#94a3b8">Warn before cutoff</div>
+          <select class="rule-select" id="enforceWarn" onchange="saveEnforceConfig()">
+            ${[5,10,15,20,30].map(m=>`<option value="${m}" ${cfg.warnMinutes===m?'selected':''}>${m} minutes</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div class="rule-label" style="color:#94a3b8">Logout after warning</div>
+          <select class="rule-select" id="enforceLogout" onchange="saveEnforceConfig()">
+            ${[5,10,15,20,30].map(m=>`<option value="${m}" ${cfg.logoutMinutes===m?'selected':''}>${m} minutes</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8;margin-top:4px">
+        <input type="checkbox" id="enforceWeekends" ${cfg.weekendsOff?'checked':''} onchange="saveEnforceConfig()" style="accent-color:#1a56db">
+        <label for="enforceWeekends">No contact center on weekends (auto-logout Sat &amp; Sun)</label>
+      </div>
+      <div style="margin-top:10px;font-size:11px;padding:8px 10px;border-radius:5px;background:rgba(255,255,255,0.07);color:#94a3b8">
+        Timezone: <strong style="color:#e2e8f0">America/Chicago</strong> &nbsp;·&nbsp;
+        Sequence: <strong style="color:#4ade80">Warn agent</strong> → <strong style="color:#fbbf24">Alert supervisor</strong> → <strong style="color:#f87171">Auto-logout</strong>
+      </div>
+    </div>
+
+    <!-- ── Alert Rules ── -->
+    <p style="font-size:12px;color:#64748b;margin-bottom:14px">
+      Rules below highlight agents on the dashboard and show an alert banner.
+    </p>
+    ${rules.map(r => `
+      <div class="rule-card ${r.enabled?'active-rule':''}" id="rule-${r.id}">
+        <div class="rule-card-top">
+          <input class="rule-name-input" value="${r.name}" placeholder="Rule name"
+            oninput="updateRule(${r.id},'name',this.value)">
+          <label class="toggle" title="${r.enabled?'Enabled':'Disabled'}">
+            <input type="checkbox" ${r.enabled?'checked':''} onchange="updateRule(${r.id},'enabled',this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="rule-row">
+          <div>
+            <div class="rule-label">CXone State</div>
+            <select class="rule-select" onchange="updateRule(${r.id},'cxState',this.value)">
+              ${CX_STATE_OPTIONS.map(s=>`<option ${r.cxState===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <div class="rule-label">Min Duration (min)</div>
+            <input class="rule-input" type="number" min="0" value="${r.minDur}"
+              onchange="updateRule(${r.id},'minDur',+this.value)" placeholder="0 = any">
+          </div>
+        </div>
+        <div class="rule-row">
+          <div>
+            <div class="rule-label">Apply to Team</div>
+            <select class="rule-select" onchange="updateRule(${r.id},'team',this.value)">
+              ${TEAM_OPTIONS.map(t=>`<option ${r.team===t?'selected':''}>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <div class="rule-label">Severity</div>
+            <select class="rule-select" onchange="updateRule(${r.id},'severity',this.value)">
+              <option ${r.severity==='high'?'selected':''} value="high">🔴 High</option>
+              <option ${r.severity==='warn'?'selected':''} value="warn">🟡 Warning</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+          <div class="rule-firing ${firedCounts[r.id]>0?'on':''}">
+            🔔 Currently firing for ${firedCounts[r.id]} agent${firedCounts[r.id]!==1?'s':''}
+          </div>
+          <button class="rule-delete" onclick="deleteRule(${r.id})">✕ Remove</button>
+        </div>
+      </div>
+    `).join('')}
+    <button class="btn-add-rule" onclick="addRule()">+ Add New Rule</button>
+  `;
+}
+
+function updateRule(id, field, value) {
+  const r = rules.find(r=>r.id===id);
+  if (r) { r[field] = value; }
+  if (field === 'enabled') renderRulesPanel(); // re-render to update card style
+  evalRules();
+}
+
+function deleteRule(id) {
+  rules = rules.filter(r=>r.id!==id);
+  renderRulesPanel();
+  evalRules();
+}
+
+function addRule() {
+  rules.push({ id: nextId++, name: 'New Rule', enabled: true, cxState: 'Break', minDur: 30, team: 'All', severity: 'warn' });
+  renderRulesPanel();
+  document.getElementById('rulesBody').scrollTop = 99999;
+}
+
+function saveRules() {
+  localStorage.setItem('supervisor_rules', JSON.stringify(rules));
+  closeRules();
+  render();
+  // Brief confirmation
+  const btn = document.querySelector('.btn-save-rules');
+  btn.textContent = '✓ Saved!';
+  btn.style.background = '#15803d';
+  setTimeout(() => { btn.textContent = 'Save Rules'; btn.style.background = ''; }, 1500);
 }
 
 // ── Clock ──
@@ -521,32 +1025,11 @@ function updateCountdown(){
 setInterval(updateCountdown, 1000);
 updateCountdown();
 
-// Simulates a data refresh (replace with real API calls when ready)
-function refreshData(){
-  for(let i=0;i<agents.length;i++){
-    if(Math.random()<0.15){ // ~15% of agents change state each refresh
-      const a=agents[i];
-      if(Math.random()<0.4) a.mvp=rand(MVP_STATUSES); else a.cx=rand(CX_STATUSES);
-      a.dur=randInt(1,95); a.since=new Date(Date.now()-a.dur*60000);
-    }
-    // Tick up duration for agents who didn't change
-    agents[i].dur = Math.min(agents[i].dur+3, 180);
-  }
-  render();
-}
+// ── Real data refresh ──
+function refreshData() { fetchData(); }
 
-// ── Live micro-sim (small updates between refreshes) ──
-function sim(){
-  for(let i=0;i<randInt(1,2);i++){
-    const a=agents[randInt(0,59)];
-    if(Math.random()<0.5) a.mvp=rand(MVP_STATUSES); else a.cx=rand(CX_STATUSES);
-    a.dur=randInt(1,95); a.since=new Date(Date.now()-a.dur*60000);
-  }
-  render();
-}
-setInterval(sim,15000);
-
-render();
+// ── Boot: auth check → load real data ──
+checkAuth().then(fetchData);
 </script>
 </body>
 </html>
