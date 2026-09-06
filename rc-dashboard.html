@@ -793,6 +793,8 @@ const DEFAULT_RULES = [
 ];
 
 let rules = JSON.parse(localStorage.getItem('supervisor_rules') || 'null') || DEFAULT_RULES;
+// Persist defaults immediately so they survive page reloads without manual save
+if (!localStorage.getItem('supervisor_rules')) localStorage.setItem('supervisor_rules', JSON.stringify(rules));
 let nextId = Math.max(...rules.map(r=>r.id)) + 1;
 
 // Check which rules an agent is firing

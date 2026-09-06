@@ -8,7 +8,9 @@ const CX_BASE = 'https://na1.nice-incontact.com';
 // Save a token pasted directly from the CXone browser session
 export function cxLogin(token) {
   if (!token) throw new Error('No token provided');
-  saveCxTokens({ access_token: token, expires_in: 14400 }); // assume 4hr expiry
+  localStorage.setItem('cx_access_token', token);
+  // No expiry stored — token persists until API returns 401, then user re-pastes
+  localStorage.removeItem('cx_token_expiry');
 }
 
 // ── Token storage ─────────────────────────────────────────────────────────────
@@ -21,8 +23,8 @@ function saveCxTokens(data) {
 
 export function getCxToken()     { return localStorage.getItem('cx_access_token'); }
 export function getCxAgentInfo() { return null; }
-export function cxIsLoggedIn()   { return !!getCxToken() && Date.now() < Number(localStorage.getItem('cx_token_expiry') || 0); }
-export function cxLogout()       { ['cx_access_token','cx_refresh_token','cx_token_expiry'].forEach(k => localStorage.removeItem(k)); }
+export function cxIsLoggedIn()   { return !!getCxToken(); } // stays logged in until token is cleared
+export function cxLogout()       { ['cx_access_token','cx_token_expiry'].forEach(k => localStorage.removeItem(k)); }
 
 // ── Auto refresh ──────────────────────────────────────────────────────────────
 export async function cxRefreshIfNeeded() {
@@ -40,7 +42,7 @@ async function cxFetch(path, opts = {}) {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...opts.headers },
   });
 
-  if (resp.status === 401) { cxLogout(); throw new Error('CXone session expired — please sign in again.'); }
+  if (resp.status === 401) { cxLogout(); throw new Error('CXone token expired — use the Get Token helper to refresh it.'); }
   if (!resp.ok) throw new Error(`CXone API error ${resp.status}`);
   return resp.json();
 }
