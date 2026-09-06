@@ -2,9 +2,7 @@
 // Attempts ROPC login directly to CXone from the browser.
 // Works if CXone allows CORS on their auth endpoint (common for enterprise APIs).
 
-// Requests go through the local proxy (proxy.js) to avoid CORS.
-// Run: node proxy.js   — then open the dashboard.
-const CX_BASE = 'http://localhost:3000';
+const CX_BASE = 'https://na1.nice-incontact.com';
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 // Save a token pasted directly from the CXone browser session
