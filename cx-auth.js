@@ -7,24 +7,10 @@
 const CX_BASE = 'http://localhost:3000';
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-export async function cxLogin(username, password) {
-  const resp = await fetch(`${CX_BASE}/authentication/v1/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', username, password }),
-  });
-
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => '');
-    let e = {};
-    try { e = JSON.parse(text); } catch {}
-    console.error('CXone auth response:', resp.status, text);
-    throw new Error(e.error_description || e.error || e.message || `CXone login failed (${resp.status}): ${text.slice(0,200)}`);
-  }
-
-  const data = await resp.json();
-  saveCxTokens(data);
-  return data;
+// Save a token pasted directly from the CXone browser session
+export function cxLogin(token) {
+  if (!token) throw new Error('No token provided');
+  saveCxTokens({ access_token: token, expires_in: 14400 }); // assume 4hr expiry
 }
 
 // ── Token storage ─────────────────────────────────────────────────────────────
@@ -42,17 +28,7 @@ export function cxLogout()       { ['cx_access_token','cx_refresh_token','cx_tok
 
 // ── Auto refresh ──────────────────────────────────────────────────────────────
 export async function cxRefreshIfNeeded() {
-  const expiry  = Number(localStorage.getItem('cx_token_expiry') || 0);
-  const refresh = localStorage.getItem('cx_refresh_token');
-  if (!refresh || Date.now() < expiry - 5 * 60 * 1000) return;
-
-  const resp = await fetch(`${CX_BASE}/authentication/v1/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refresh }),
-  });
-  if (resp.ok) saveCxTokens(await resp.json());
-  else cxLogout();
+  // No refresh with pasted tokens — user re-pastes when expired
 }
 
 // ── API calls ─────────────────────────────────────────────────────────────────

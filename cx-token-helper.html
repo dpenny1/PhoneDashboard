@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Get CXone Token</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f5f7; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 36px 32px; max-width: 480px; width: 100%; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+  .logo { width: 48px; height: 48px; background: #e07000; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 18px; margin-bottom: 16px; }
+  h1 { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+  p  { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 20px; }
+  .step { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: #e07000; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-text { font-size: 14px; color: #334155; line-height: 1.5; }
+  .bookmarklet {
+    display: block; width: 100%; padding: 13px 20px;
+    background: #e07000; color: #fff; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 700; cursor: pointer; text-align: center;
+    text-decoration: none; margin-top: 24px; transition: background 0.15s;
+  }
+  .bookmarklet:hover { background: #c45f00; }
+  .divider { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+  .manual-label { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  .code-block { background: #f8faff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; color: #334155; word-break: break-all; margin-bottom: 12px; }
+  .btn-copy { background: #1a1a2e; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .note { font-size: 12px; color: #94a3b8; margin-top: 16px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">CX</div>
+  <h1>Get Your CXone Token</h1>
+  <p>Drag the button below to your browser bookmarks bar. Then open your CXone tab and click it — your token will be copied automatically.</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-text">Drag the button below to your <strong>bookmarks bar</strong></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-text">Open your <strong>CXone tab</strong> (make sure you're logged in)</div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-text">Click the bookmark — your token is <strong>copied to clipboard</strong></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-text">Go back to the dashboard and <strong>paste it</strong> into the CXone box</div>
+  </div>
+
+  <a class="bookmarklet" href="javascript:(function(){var t=null;var keys=['access_token','userToken','ICToken','token','authToken','bearerToken','id_token'];for(var i=0;i<keys.length;i++){var v=localStorage.getItem(keys[i])||sessionStorage.getItem(keys[i]);if(v&&v.length>20){t=v;break;}}if(!t){for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);var v=localStorage.getItem(k);if(v&&v.startsWith('eyJ')&&v.length>100){t=v;break;}}}if(!t){for(var i=0;i<sessionStorage.length;i++){var k=sessionStorage.key(i);var v=sessionStorage.getItem(k);if(v&&v.startsWith('eyJ')&&v.length>100){t=v;break;}}}if(t){navigator.clipboard.writeText(t).then(function(){alert('CXone token copied to clipboard!\n\nGo back to the dashboard and paste it into the CXone box.');}).catch(function(){prompt('Copy this token:',t);});}else{alert('No token found. Make sure you are logged into CXone in this tab.');}})();">
+    📋 Copy CXone Token
+  </a>
+
+  <hr class="divider">
+
+  <div class="manual-label">Or find it manually</div>
+  <p style="margin-bottom:12px">In your CXone tab, press F12 and run this in the Console:</p>
+  <div class="code-block" id="codeBlock">var t=Object.keys(localStorage).map(k=>localStorage.getItem(k)).concat(Object.keys(sessionStorage).map(k=>sessionStorage.getItem(k))).find(v=>v&&v.startsWith('eyJ')&&v.length>100); if(t) { navigator.clipboard.writeText(t); console.log('Token copied!'); } else { console.log('Not found'); }</div>
+  <button class="btn-copy" onclick="navigator.clipboard.writeText(document.getElementById('codeBlock').textContent).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy command',1500)})">Copy command</button>
+
+  <div class="note">Tokens expire after a few hours. When the dashboard shows a CXone error, repeat steps 2–4 to refresh it.</div>
+</div>
+</body>
+</html>
