@@ -696,6 +696,16 @@ function renderCards(){
   const mismatchCount = agents.filter(isMismatch).length;
   const refusedCount  = agents.filter(a=>a.cx.label==='Refused').length;
 
+  // Publish exception counts for the CentralView triage dashboards
+  try {
+    localStorage.setItem('rc_exceptions_v1', JSON.stringify({
+      mismatch: mismatchCount,
+      refused:  refusedCount,
+      total:    mismatchCount + refusedCount,
+      ts:       Date.now()
+    }));
+  } catch (e) {}
+
   // Alert tiles only shown when non-zero; when non-zero they go first
   const alertCards = [
     mismatchCount > 0 ? { key:'Mismatch', label:'MISMATCHES', cls:'c-mismatch', count: mismatchCount } : null,
