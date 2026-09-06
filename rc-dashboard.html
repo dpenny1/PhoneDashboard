@@ -383,7 +383,9 @@
 
 <script>
 // ── Config ──
-const GROUPS = ['Billing','Support','Sales','Escalations','Back Office'];
+// Only agents in these RC departments are shown — adjust to match exact names in RingCentral
+const ALLOWED_GROUPS = ['Customer Service', 'Quality Control'];
+const GROUPS = ALLOWED_GROUPS; // kept for any legacy references
 const GROUP_COLORS = {
   'Billing':     { cls:'c-billing',    badge:'gb-billing' },
   'Support':     { cls:'c-support',    badge:'gb-support' },
@@ -575,7 +577,8 @@ function mergeAgents(rcList, cxList) {
     });
   });
 
-  return merged;
+  // Only return agents whose department is in the allowed list
+  return merged.filter(a => ALLOWED_GROUPS.includes(a.group));
 }
 
 // ── Dynamic group list from real data ──
