@@ -604,8 +604,10 @@ function showError(msg) {
 
 function isMismatch(a){
   const m=a.mvp.label,c=a.cx.label;
+  // Logged Out of CXone is always valid — agent may still take direct calls
+  if(c==='Logged Out') return false;
   if(m==='On a Call'&&c!=='On Call'&&c!=='ACW') return true;
-  if(m==='Available'&&(c==='Break'||c==='Lunch'||c==='Logged Out')) return true;
+  if(m==='Available'&&(c==='Break'||c==='Lunch')) return true;
   if(m==='Offline'&&(c==='Available'||c==='On Call')) return true;
   return false;
 }
@@ -837,6 +839,8 @@ let nextId = Math.max(...rules.map(r=>r.id)) + 1;
 
 // Check which rules an agent is firing
 function getFiredRules(agent) {
+  // Logged Out of CXone = valid state, no rules apply
+  if (agent.cx.label === 'Logged Out') return [];
   return rules.filter(r => {
     if (!r.enabled) return false;
     if (r.team !== 'All' && r.team !== agent.group) return false;
