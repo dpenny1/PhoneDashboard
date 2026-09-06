@@ -390,7 +390,9 @@ const GROUP_COLORS = {
   'Sales':       { cls:'c-sales',      badge:'gb-sales' },
   'Escalations': { cls:'c-escal',      badge:'gb-escal' },
   'Back Office': { cls:'c-backoffice', badge:'gb-backoffice' },
+  'Unassigned':  { cls:'c-offline',    badge:'gb-offline' },
 };
+const DEFAULT_GROUP_COLOR = { cls:'c-offline', badge:'gb-offline' };
 const CARD_DEFS = [
   { key:'Refused',     label:'REFUSED',     cls:'c-refused' },
   { key:'Mismatch',    label:'MISMATCHES',  cls:'c-mismatch' },
@@ -727,7 +729,7 @@ function renderContent(){
               const mm=isMismatch(a);
               const nonWork=['Break','Lunch','Logged Out','ACW'];
               const durCls=nonWork.includes(a.cx.label)&&a.dur>30?'dur-long':nonWork.includes(a.cx.label)&&a.dur>15?'dur-medium':'dur-normal';
-              const gc=GROUP_COLORS[a.group];
+              const gc=GROUP_COLORS[a.group] || DEFAULT_GROUP_COLOR;
               const fired=getFiredRules(a);
               const rowCls=fired.length?(fired.some(r=>r.severity==='high')?'rule-alert-high':'rule-alert-med'):'';
               return `<tr class="${rowCls}">
