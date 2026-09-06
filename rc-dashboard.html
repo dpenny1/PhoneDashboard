@@ -388,7 +388,7 @@
     <option>Offline</option>
   </select>
   <select class="filter-select" id="cxFilter" onchange="render()">
-    <option value="">All CXone States</option>
+    <option value="">All CXone Statuses</option>
     <option>Available</option>
     <option>On Call</option>
     <option>ACW</option>
@@ -654,7 +654,13 @@ function isMismatch(a){
   return false;
 }
 function fmtDur(m){return m<60?m+'m':Math.floor(m/60)+'h '+(m%60)+'m';}
-function fmtTime(d){return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
+function fmtTime(d){
+  if(!d||isNaN(d)) return '—';
+  const now=new Date(), isToday=d.toDateString()===now.toDateString();
+  const time=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  if(isToday) return time;
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+time;
+}
 
 // ── State ──
 let activeGroup = 'All';
@@ -801,7 +807,7 @@ function renderContent(){
             <th onclick="setSort('name')">Agent ${arw('name')}</th>
             ${showGroup?`<th onclick="setSort('group')">Team ${arw('group')}</th>`:''}
             <th onclick="setSort('mvp')">MVP Status ${arw('mvp')}</th>
-            <th>CXone State</th>
+            <th>CXone Status</th>
             <th>Since</th>
             <th onclick="setSort('dur')">Duration ${arw('dur')}</th>
             <th>Flag</th>
@@ -828,7 +834,7 @@ function renderContent(){
                   </select>
                 </td>
                 <td onclick="event.stopPropagation()">
-                  <select class="action-select" onchange="setCxState('${a.cxId||''}',this.value,this)">
+                  <select class="action-select" ${a.cx.label==='Logged Out'?'disabled':''} onchange="setCxState('${a.cxId||''}',this.value,this)">
                     <option value="Available" ${a.cx.label==='Available'?'selected':''}>✅ Available</option>
                     <option value="Break" ${a.cx.label==='Break'?'selected':''}>☕ Break</option>
                     <option value="Lunch" ${a.cx.label==='Lunch'?'selected':''}>🍽 Lunch</option>
@@ -867,7 +873,7 @@ function renderContent(){
       <div class="leg-item"><span class="leg-dot" style="background:#94a3b8"></span>Offline</div>
     </div>
     <div class="leg-section">
-      <div class="leg-title">CXone State (panels above)</div>
+      <div class="leg-title">CXone Status (panels above)</div>
       <div class="leg-item"><span class="leg-dot" style="background:#15803d"></span>Available</div>
       <div class="leg-item"><span class="leg-dot" style="background:#dc2626"></span>On Call</div>
       <div class="leg-item"><span class="leg-dot" style="background:#6d28d9"></span>After Call Work</div>
