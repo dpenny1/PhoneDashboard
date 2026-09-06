@@ -4,7 +4,7 @@ const RC_REDIRECT    = 'https://dpenny1.github.io/PhoneDashboard/callback.html';
 const RC_AUTH_URL    = 'https://platform.ringcentral.com/restapi/oauth/authorize';
 const RC_TOKEN_URL   = 'https://platform.ringcentral.com/restapi/oauth/token';
 const RC_API_BASE    = 'https://platform.ringcentral.com/restapi/v1.0';
-const RC_SCOPES      = 'ReadPresence EditPresence ReadCallLog ReadAccounts EditExtensions';
+const RC_SCOPES      = 'ReadPresence EditPresence ReadCallLog ReadAccounts';
 
 // ── PKCE helpers ──
 async function generatePKCE() {
