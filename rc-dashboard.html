@@ -850,7 +850,7 @@ function renderContent(){
                   ${fired.map(r=>`<span class="alert-pill ${r.severity==='high'?'':'warn'}" title="${r.name}">🔔 ${r.name}</span>`).join(' ')}
                 </td>
                 <td class="action-cell" onclick="event.stopPropagation()">
-                  <button class="action-btn-logout" title="Logout from CXone" onclick="cxLogoutAgent('${a.cxId||''}','${a.name}',this)">⏏ Logout</button>
+                  ${a.cx.label!=='Logged Out'?`<button class="action-btn-logout" title="Logout from CXone" onclick="cxLogoutAgent('${a.cxId||''}','${a.name}',this)">⏏ Logout</button>`:''}
                 </td>
               </tr>`;
             }).join('')}
