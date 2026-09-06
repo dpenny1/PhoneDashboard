@@ -309,11 +309,10 @@
     <span style="font-size:10px;color:#475569;background:#1e293b;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:0.04em">v1.0.1</span>
   </div>
   <div class="nav-right">
-    <a href="agent-dashboard.html" style="font-size:12px;color:#94a3b8;text-decoration:none;padding:4px 10px;border:1px solid #334155;border-radius:5px;transition:all 0.15s" onmouseover="this.style.color='#fff';this.style.borderColor='#64748b'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155'">🎧 Agent View</a>
     <button class="btn-rules" onclick="openRules()">
       ⚙ Rules <span class="rules-badge" id="rulesBadge"></span>
     </button>
-    <span class="live-pill"><span class="live-dot"></span>LIVE (Mock)</span>
+    <span class="live-pill"><span class="live-dot"></span>LIVE</span>
     <span class="nav-time" id="clock"></span>
   </div>
 </nav>
@@ -765,7 +764,8 @@ function renderContent(){
               const gc=GROUP_COLORS[a.group] || DEFAULT_GROUP_COLOR;
               const fired=getFiredRules(a);
               const rowCls=fired.length?(fired.some(r=>r.severity==='high')?'rule-alert-high':'rule-alert-med'):'';
-              return `<tr class="${rowCls}">
+              const agentParam = encodeURIComponent(JSON.stringify({id:a.rcId,name:a.name,group:a.group,mvp:a.mvp.label,cx:a.cx.label,dur:a.dur}));
+              return `<tr class="${rowCls}" style="cursor:pointer" onclick="location.href='agent-dashboard.html?agent=${agentParam}'">
                 <td class="agent-name">${a.name}</td>
                 ${showGroup?`<td><span class="agent-group-badge ${gc.badge}">${a.group}</span></td>`:''}
                 <td><span class="pill ${a.mvp.cls}"><span class="pill-dot"></span>${a.mvp.label}</span></td>

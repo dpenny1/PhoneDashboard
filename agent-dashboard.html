@@ -8,158 +8,82 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f5f7; color: #1a1a2e; min-height: 100vh; }
 
-  /* ── Nav ── */
   nav {
     background: #1a1a2e; height: 44px;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px; position: sticky; top: 0; z-index: 200;
+    padding: 0 20px; position: sticky; top: 0; z-index: 100;
   }
   .nav-left { display: flex; align-items: center; gap: 12px; }
-  .nav-logo { width: 28px; height: 28px; border-radius: 6px; background: #1a56db; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 13px; }
+  .nav-logo  { width: 28px; height: 28px; border-radius: 6px; background: #1a56db; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 13px; }
   .nav-title { color: #fff; font-size: 14px; font-weight: 600; }
-  .nav-sub { color: #64748b; font-size: 13px; }
   .nav-right { display: flex; align-items: center; gap: 12px; }
-  .nav-time { color: #94a3b8; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .nav-time  { color: #94a3b8; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .back-link { font-size: 12px; color: #94a3b8; text-decoration: none; padding: 4px 10px; border: 1px solid #334155; border-radius: 5px; transition: all 0.15s; }
+  .back-link:hover { color: #fff; border-color: #64748b; }
   .live-pill { background: #14532d; color: #4ade80; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; display: flex; align-items: center; gap: 5px; }
-  .live-dot { width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: blink 1.5s infinite; }
+  .live-dot  { width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: blink 1.5s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  @keyframes spin  { to { transform: rotate(360deg); } }
 
-  /* ── Layout ── */
-  .page { max-width: 1400px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 300px 1fr 1fr; gap: 16px; align-items: start; }
+  .page { max-width: 900px; margin: 28px auto; padding: 0 20px 40px; display: flex; flex-direction: column; gap: 16px; }
 
-  /* ── Card base ── */
-  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-  .card-header { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
-  .card-title { font-size: 13px; font-weight: 700; color: #1a1a2e; text-transform: uppercase; letter-spacing: 0.05em; }
-  .card-body { padding: 16px; }
-
-  /* ── Agent Identity ── */
-  .agent-hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #1e3a5f 100%);
-    padding: 20px 16px 16px;
-    display: flex; align-items: center; gap: 14px;
+  /* ── Agent header card ── */
+  .agent-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 24px 28px; display: flex; align-items: center; gap: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
   .avatar {
-    width: 52px; height: 52px; border-radius: 50%;
-    background: #1a56db; color: #fff;
+    width: 64px; height: 64px; border-radius: 50%; background: #1a56db;
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px; font-weight: 700; flex-shrink: 0;
-    border: 2px solid rgba(255,255,255,0.2);
+    font-size: 24px; font-weight: 700; color: #fff; flex-shrink: 0;
   }
   .agent-info { flex: 1; }
-  .agent-name { font-size: 17px; font-weight: 700; color: #fff; }
-  .agent-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-  .agent-id { font-size: 11px; color: #475569; margin-top: 4px; }
+  .agent-name-big { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+  .agent-dept     { font-size: 13px; color: #64748b; margin-top: 2px; }
+  .mismatch-badge { background: #fef3c7; color: #92400e; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid #fcd34d; margin-top: 6px; display: inline-block; }
 
-  /* ── Status Section ── */
-  .status-section { padding: 14px 16px; }
-  .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .status-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-  .status-since { font-size: 11px; color: #94a3b8; }
-
-  /* Pills */
-  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .pill-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .mvp-available { background:#dcfce7; color:#15803d; } .mvp-available .pill-dot{background:#16a34a;}
-  .mvp-busy      { background:#fee2e2; color:#dc2626; } .mvp-busy .pill-dot{background:#dc2626;}
-  .mvp-dnd       { background:#ffedd5; color:#c2410c; } .mvp-dnd .pill-dot{background:#ea580c;}
-  .mvp-offline   { background:#f1f5f9; color:#64748b; } .mvp-offline .pill-dot{background:#94a3b8;}
-  .cx-available  { background:#e0f2fe; color:#0369a1; } .cx-available .pill-dot{background:#0284c7;}
-  .cx-oncall     { background:#fee2e2; color:#dc2626; } .cx-oncall .pill-dot{background:#dc2626;}
-  .cx-acw        { background:#ede9fe; color:#6d28d9; } .cx-acw .pill-dot{background:#7c3aed;}
-  .cx-break      { background:#ffedd5; color:#c2410c; } .cx-break .pill-dot{background:#ea580c;}
-  .cx-lunch      { background:#fef9c3; color:#a16207; } .cx-lunch .pill-dot{background:#ca8a04;}
-  .cx-training   { background:#dbeafe; color:#1d4ed8; } .cx-training .pill-dot{background:#2563eb;}
-  .cx-loggedout  { background:#f1f5f9; color:#64748b; } .cx-loggedout .pill-dot{background:#94a3b8;}
-  .cx-refused    { background:#ffe4e6; color:#be123c; } .cx-refused .pill-dot{background:#e11d48;}
-
-  .dur-badge { background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
-  .dur-badge.warn { background: #fef3c7; color: #92400e; }
-  .dur-badge.alert { background: #fee2e2; color: #dc2626; }
-
-  .divider { border: none; border-top: 1px solid #f1f5f9; margin: 2px 0 10px; }
-
-  /* ── CXone State Buttons ── */
-  .state-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 16px 16px; }
-  .state-btn {
-    padding: 7px 10px; border-radius: 6px; border: 1.5px solid transparent;
-    font-size: 12px; font-weight: 600; cursor: pointer; text-align: center;
-    transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 5px;
+  /* ── Status cards ── */
+  .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .status-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 20px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
-  .state-btn:hover { opacity: 0.85; transform: translateY(-1px); }
-  .state-btn.active { box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor; }
-
-  .btn-available  { background:#dcfce7; color:#15803d; border-color:#bbf7d0; }
-  .btn-break      { background:#ffedd5; color:#c2410c; border-color:#fed7aa; }
-  .btn-lunch      { background:#fef9c3; color:#a16207; border-color:#fde68a; }
-  .btn-acw        { background:#ede9fe; color:#6d28d9; border-color:#ddd6fe; }
-  .btn-training   { background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe; }
-  .btn-loggedout  { background:#f1f5f9; color:#475569; border-color:#e2e8f0; }
-
-  /* ── Stat Cards ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 14px 16px; }
-  .stat-box { text-align: center; padding: 10px 8px; background: #f8faff; border-radius: 6px; border: 1px solid #e2e8f0; }
-  .stat-num { font-size: 26px; font-weight: 700; line-height: 1; }
-  .stat-lbl { font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
-  .stat-sub { font-size: 10px; color: #94a3b8; margin-top: 2px; }
-
-  .sn-calls    { color: #1a56db; }
-  .sn-talk     { color: #15803d; }
-  .sn-acw      { color: #6d28d9; }
-  .sn-refused  { color: #be123c; }
-  .sn-handled  { color: #0369a1; }
-  .sn-avg      { color: #d97706; }
-
-  /* ── Mismatch warning ── */
-  .mismatch-banner {
-    margin: 0 16px 12px; padding: 8px 12px; border-radius: 6px;
-    background: #fef3c7; border: 1px solid #fde68a;
-    font-size: 12px; color: #92400e; display: flex; align-items: center; gap: 6px;
+  .status-card-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .status-pill-lg {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 999px; font-size: 16px; font-weight: 700;
   }
+  .pill-dot-lg { width: 10px; height: 10px; border-radius: 50%; }
+  .duration-line { margin-top: 10px; font-size: 13px; color: #64748b; }
+  .duration-val  { font-weight: 600; color: #1a1a2e; }
 
-  /* ── Call History Table ── */
-  table { width: 100%; border-collapse: collapse; }
-  thead th {
-    background: #f8faff; padding: 7px 12px; text-align: left;
-    font-size: 10px; font-weight: 700; color: #64748b;
-    text-transform: uppercase; letter-spacing: 0.06em;
-    border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+  /* pill colors */
+  .mvp-available  { background:#dcfce7; color:#15803d; } .mvp-available  .pill-dot-lg { background:#15803d; }
+  .mvp-busy       { background:#fee2e2; color:#dc2626; } .mvp-busy       .pill-dot-lg { background:#dc2626; }
+  .mvp-dnd        { background:#fef3c7; color:#b45309; } .mvp-dnd        .pill-dot-lg { background:#b45309; }
+  .mvp-offline    { background:#f1f5f9; color:#64748b; } .mvp-offline    .pill-dot-lg { background:#94a3b8; }
+  .cx-available   { background:#dcfce7; color:#15803d; } .cx-available   .pill-dot-lg { background:#15803d; }
+  .cx-oncall      { background:#fee2e2; color:#dc2626; } .cx-oncall      .pill-dot-lg { background:#dc2626; }
+  .cx-acw         { background:#ede9fe; color:#6d28d9; } .cx-acw         .pill-dot-lg { background:#7c3aed; }
+  .cx-break       { background:#fef3c7; color:#b45309; } .cx-break       .pill-dot-lg { background:#d97706; }
+  .cx-lunch       { background:#ffedd5; color:#c2410c; } .cx-lunch       .pill-dot-lg { background:#ea580c; }
+  .cx-training    { background:#dbeafe; color:#1d4ed8; } .cx-training    .pill-dot-lg { background:#2563eb; }
+  .cx-loggedout   { background:#f1f5f9; color:#64748b; } .cx-loggedout   .pill-dot-lg { background:#94a3b8; }
+  .cx-refused     { background:#fee2e2; color:#dc2626; } .cx-refused     .pill-dot-lg { background:#dc2626; }
+
+  /* ── Info rows ── */
+  .info-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 20px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
-  tbody tr { border-bottom: 1px solid #f1f5f9; transition: background 0.1s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: #f8faff; }
-  td { padding: 8px 12px; font-size: 12px; color: #1a1a2e; vertical-align: middle; }
-  .call-in  { color: #15803d; font-weight: 600; }
-  .call-out { color: #1a56db; font-weight: 600; }
-  .call-mis { color: #dc2626; font-weight: 600; }
-  .disp-pill { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 10px; font-weight: 600; }
-  .disp-resolved  { background: #dcfce7; color: #15803d; }
-  .disp-callback  { background: #dbeafe; color: #1d4ed8; }
-  .disp-transfer  { background: #ede9fe; color: #6d28d9; }
-  .disp-voicemail { background: #f1f5f9; color: #475569; }
-  .disp-refused   { background: #ffe4e6; color: #be123c; }
+  .info-card-title { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; }
+  .info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #64748b; }
+  .info-val   { font-weight: 600; color: #1a1a2e; }
 
-  /* ── Queue View ── */
-  .queue-list { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; }
-  .queue-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px; background: #f8faff; border: 1px solid #e2e8f0; border-radius: 6px;
-  }
-  .queue-row.my-team { border-left: 3px solid #1a56db; background: #f0f4ff; }
-  .queue-name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
-  .queue-tag { font-size: 10px; color: #1a56db; font-weight: 600; margin-left: 6px; background: #dbeafe; padding: 1px 6px; border-radius: 3px; }
-  .queue-nums { display: flex; gap: 16px; }
-  .q-num { text-align: center; }
-  .q-val { font-size: 16px; font-weight: 700; line-height: 1; }
-  .q-lbl { font-size: 9px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
-  .q-green { color: #15803d; }
-  .q-red   { color: #dc2626; }
-  .q-yel   { color: #d97706; }
-  .q-blue  { color: #1a56db; }
-
-  /* ── Refresh bar ── */
-  .refresh-bar { font-size: 11px; color: #94a3b8; text-align: right; padding: 6px 20px 0; }
-
+  .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -168,325 +92,100 @@
   <div class="nav-left">
     <div class="nav-logo">RC</div>
     <span class="nav-title">Agent Dashboard</span>
-    <span style="font-size:10px;color:#475569;background:#1e293b;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:0.04em">v1.0.1</span>
-    <span class="nav-sub" id="navSub"></span>
+    <span style="font-size:10px;color:#475569;background:#1e293b;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:0.04em">v1.1.0</span>
   </div>
   <div class="nav-right">
-    <a href="rc-dashboard.html" style="font-size:12px;color:#94a3b8;text-decoration:none;padding:4px 10px;border:1px solid #334155;border-radius:5px;transition:all 0.15s" onmouseover="this.style.color='#fff';this.style.borderColor='#64748b'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155'">📊 Supervisor View</a>
-    <span class="live-pill"><span class="live-dot"></span>LIVE (Mock)</span>
+    <a href="rc-dashboard.html" class="back-link">← Supervisor Dashboard</a>
+    <span class="live-pill"><span class="live-dot"></span>LIVE</span>
     <span class="nav-time" id="clock"></span>
   </div>
 </nav>
 
-<div class="refresh-bar">Auto-refresh in <span id="countdown"></span></div>
-
-<div class="page">
-
-  <!-- ── LEFT COLUMN ── -->
-  <div style="display:flex;flex-direction:column;gap:16px;">
-
-    <!-- Status Card -->
-    <div class="card">
-      <div class="agent-hero">
-        <div class="avatar" id="avatarEl"></div>
-        <div class="agent-info">
-          <div class="agent-name" id="agentNameEl"></div>
-          <div class="agent-meta" id="agentMetaEl"></div>
-          <div class="agent-id" id="agentIdEl"></div>
-        </div>
-      </div>
-
-      <!-- Mismatch banner -->
-      <div id="mismatchBanner" style="display:none" class="mismatch-banner">
-        ⚠ Your MVP and CXone statuses don't match — your supervisor can see this.
-      </div>
-
-      <div class="status-section">
-        <!-- MVP -->
-        <div class="status-row">
-          <span class="status-label">MVP (RingCentral)</span>
-          <span class="status-since" id="mvpSince"></span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <span id="mvpPill"></span>
-          <span class="dur-badge" id="mvpDur"></span>
-        </div>
-        <hr class="divider">
-        <!-- CXone -->
-        <div class="status-row">
-          <span class="status-label">CXone State</span>
-          <span class="status-since" id="cxSince"></span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span id="cxPill"></span>
-          <span class="dur-badge" id="cxDur"></span>
-        </div>
-      </div>
-
-      <!-- Change State -->
-      <div style="padding:4px 16px 8px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Change CXone State</div>
-      <div class="state-grid">
-        <button class="state-btn btn-available"  onclick="setCxState('Available')"><span style="width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block"></span>Available</button>
-        <button class="state-btn btn-break"       onclick="setCxState('Break')"><span style="width:7px;height:7px;border-radius:50%;background:#ea580c;display:inline-block"></span>Break</button>
-        <button class="state-btn btn-lunch"       onclick="setCxState('Lunch')"><span style="width:7px;height:7px;border-radius:50%;background:#ca8a04;display:inline-block"></span>Lunch</button>
-        <button class="state-btn btn-acw"         onclick="setCxState('ACW')"><span style="width:7px;height:7px;border-radius:50%;background:#7c3aed;display:inline-block"></span>ACW</button>
-        <button class="state-btn btn-training"    onclick="setCxState('Training')"><span style="width:7px;height:7px;border-radius:50%;background:#2563eb;display:inline-block"></span>Training</button>
-        <button class="state-btn btn-loggedout"   onclick="setCxState('Logged Out')"><span style="width:7px;height:7px;border-radius:50%;background:#94a3b8;display:inline-block"></span>Log Out</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── MIDDLE COLUMN ── -->
-  <div style="display:flex;flex-direction:column;gap:16px;">
-
-    <!-- Today's Stats -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Today's Activity</span>
-        <span style="font-size:11px;color:#94a3b8" id="shiftTime"></span>
-      </div>
-      <div class="stats-grid" id="statsGrid"></div>
-    </div>
-
-    <!-- Team Queue -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Team Queues</span>
-        <span style="font-size:11px;color:#94a3b8">Live</span>
-      </div>
-      <div class="queue-list" id="queueList"></div>
-    </div>
-
-  </div>
-
-  <!-- ── RIGHT COLUMN ── -->
-  <div style="display:flex;flex-direction:column;gap:16px;">
-
-    <!-- Recent Calls -->
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Recent Calls</span>
-        <span style="font-size:11px;color:#94a3b8">Today</span>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Type</th>
-            <th>Duration</th>
-            <th>ACW</th>
-            <th>Disposition</th>
-            <th>Queue</th>
-          </tr>
-        </thead>
-        <tbody id="callLog"></tbody>
-      </table>
-    </div>
-
-  </div>
+<div class="page" id="page">
+  <div class="empty-state" id="emptyState">Loading agent...</div>
 </div>
 
 <script>
-// ── Mock agent data ──
-const AGENT = {
-  name: 'Sarah Johnson',
-  group: 'Support',
-  id: 'AGT-1042',
-  extension: '3217',
-};
+function tick(){ document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+setInterval(tick,1000); tick();
 
-const CX_CONFIG = {
-  'Available':  { cls:'cx-available',  btnCls:'btn-available' },
-  'On Call':    { cls:'cx-oncall',     btnCls:null },
-  'ACW':        { cls:'cx-acw',        btnCls:'btn-acw' },
-  'Break':      { cls:'cx-break',      btnCls:'btn-break' },
-  'Lunch':      { cls:'cx-lunch',      btnCls:'btn-lunch' },
-  'Training':   { cls:'cx-training',   btnCls:'btn-training' },
-  'Logged Out': { cls:'cx-loggedout',  btnCls:'btn-loggedout' },
-  'Refused':    { cls:'cx-refused',    btnCls:null },
-};
-const MVP_CONFIG = {
-  'Available':      'mvp-available',
-  'On a Call':      'mvp-busy',
-  'Do Not Disturb': 'mvp-dnd',
-  'Offline':        'mvp-offline',
-};
+function fmtDur(m){ return m < 60 ? m+'m' : Math.floor(m/60)+'h '+(m%60)+'m'; }
 
-// State
-let mvpStatus    = 'Available';
-let cxState      = 'Available';
-let mvpDurMin    = 14;
-let cxDurMin     = 14;
-let mvpSinceTs   = new Date(Date.now() - 14*60000);
-let cxSinceTs    = new Date(Date.now() - 14*60000);
-
-// Today's stats
-const stats = {
-  calls: 18, talkMin: 142, acwMin: 28,
-  refused: 1, handled: 17, avgTalkMin: 7,
-};
-
-// Call log
-const DISPOSITIONS = ['Resolved','Callback','Transfer','Voicemail','Refused'];
-const DISP_CLS = { Resolved:'disp-resolved', Callback:'disp-callback', Transfer:'disp-transfer', Voicemail:'disp-voicemail', Refused:'disp-refused' };
-const QUEUES = ['Support','Billing','Sales','Escalations','Back Office'];
-function rand(a){return a[Math.floor(Math.random()*a.length)];}
-function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
-
-const callLog = [];
-let t = new Date(); t.setHours(8,0,0,0);
-for(let i=0;i<18;i++){
-  t = new Date(t.getTime() + randInt(8,28)*60000);
-  const dur = randInt(2,18);
-  const acw = randInt(0,5);
-  const type = Math.random()<0.85?'Inbound':Math.random()<0.5?'Outbound':'Missed';
-  const disp = type==='Missed'?'Voicemail':rand(DISPOSITIONS.filter(d=>d!=='Voicemail'));
-  callLog.push({ time: new Date(t), dur, acw, type, disp, queue: rand(QUEUES) });
+function mvpCls(label){
+  return { 'Available':'mvp-available', 'On a Call':'mvp-busy', 'Do Not Disturb':'mvp-dnd', 'Offline':'mvp-offline' }[label] || 'mvp-offline';
 }
-callLog.reverse();
-
-// Queue data
-const queues = QUEUES.map(q=>({
-  name:q,
-  waiting: randInt(0,7),
-  longest: randInt(0,10),
-  available: randInt(1,5),
-  onCall: randInt(1,6),
-}));
-
-// ── Helpers ──
-function fmtTime(d){return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
-function fmtDur(m){return m<60?m+'m':Math.floor(m/60)+'h '+(m%60)+'m';}
-function initials(n){return n.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();}
-
-function isMismatch(){
-  if(mvpStatus==='On a Call'&&cxState!=='On Call'&&cxState!=='ACW') return true;
-  if(mvpStatus==='Available'&&(cxState==='Break'||cxState==='Lunch'||cxState==='Logged Out')) return true;
-  if(mvpStatus==='Offline'&&(cxState==='Available'||cxState==='On Call')) return true;
+function cxCls(label){
+  return { 'Available':'cx-available','On Call':'cx-oncall','ACW':'cx-acw','Break':'cx-break','Lunch':'cx-lunch','Training':'cx-training','Logged Out':'cx-loggedout','Refused':'cx-refused' }[label] || 'cx-loggedout';
+}
+function isMismatch(mvp, cx){
+  if(cx==='Logged Out') return false;
+  if(mvp==='On a Call' && cx!=='On Call' && cx!=='ACW') return true;
+  if(mvp==='Available' && (cx==='Break'||cx==='Lunch')) return true;
+  if(mvp==='Offline'   && (cx==='Available'||cx==='On Call')) return true;
   return false;
 }
 
-// ── Render ──
-function renderIdentity(){
-  document.getElementById('avatarEl').textContent = initials(AGENT.name);
-  document.getElementById('agentNameEl').textContent = AGENT.name;
-  document.getElementById('agentMetaEl').textContent = AGENT.group + ' Team';
-  document.getElementById('agentIdEl').textContent = AGENT.id + '  ·  Ext. ' + AGENT.extension;
-  document.getElementById('navSub').textContent = '— ' + AGENT.name;
+function initials(name){
+  return name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
 }
 
-function renderStatus(){
-  // MVP
-  document.getElementById('mvpSince').textContent = 'Since ' + fmtTime(mvpSinceTs);
-  document.getElementById('mvpPill').innerHTML = `<span class="pill ${MVP_CONFIG[mvpStatus]}"><span class="pill-dot"></span>${mvpStatus}</span>`;
-  const mvpDurBadge = document.getElementById('mvpDur');
-  mvpDurBadge.textContent = fmtDur(mvpDurMin);
-  mvpDurBadge.className = 'dur-badge' + (mvpDurMin>45?' alert':mvpDurMin>20?' warn':'');
+function render(agent){
+  const mismatch = isMismatch(agent.mvp, agent.cx);
+  const page = document.getElementById('page');
+  page.innerHTML = `
+    <!-- Agent header -->
+    <div class="agent-card">
+      <div class="avatar">${initials(agent.name)}</div>
+      <div class="agent-info">
+        <div class="agent-name-big">${agent.name}</div>
+        <div class="agent-dept">${agent.group}</div>
+        ${mismatch ? '<span class="mismatch-badge">⚠ Status Mismatch</span>' : ''}
+      </div>
+    </div>
 
-  // CXone
-  document.getElementById('cxSince').textContent = 'Since ' + fmtTime(cxSinceTs);
-  const cxCfg = CX_CONFIG[cxState]||{cls:'cx-available'};
-  document.getElementById('cxPill').innerHTML = `<span class="pill ${cxCfg.cls}"><span class="pill-dot"></span>${cxState}</span>`;
-  const cxDurBadge = document.getElementById('cxDur');
-  cxDurBadge.textContent = fmtDur(cxDurMin);
-  const nonWork=['Break','Lunch','ACW','Logged Out'];
-  cxDurBadge.className = 'dur-badge' + (nonWork.includes(cxState)&&cxDurMin>30?' alert':nonWork.includes(cxState)&&cxDurMin>15?' warn':'');
+    <!-- Status cards -->
+    <div class="status-row">
+      <div class="status-card">
+        <div class="status-card-label">RingCentral MVP Status</div>
+        <span class="status-pill-lg ${mvpCls(agent.mvp)}">
+          <span class="pill-dot-lg"></span>${agent.mvp}
+        </span>
+        <div class="duration-line">In this status for <span class="duration-val">${fmtDur(agent.dur)}</span></div>
+      </div>
+      <div class="status-card">
+        <div class="status-card-label">CXone Contact Center Status</div>
+        <span class="status-pill-lg ${cxCls(agent.cx)}">
+          <span class="pill-dot-lg"></span>${agent.cx}
+        </span>
+        <div class="duration-line">In this status for <span class="duration-val">${fmtDur(agent.dur)}</span></div>
+      </div>
+    </div>
 
-  // Mismatch banner
-  document.getElementById('mismatchBanner').style.display = isMismatch()?'flex':'none';
-
-  // Active button highlight
-  document.querySelectorAll('.state-btn').forEach(btn=>btn.classList.remove('active'));
-  const cfg = CX_CONFIG[cxState];
-  if(cfg&&cfg.btnCls){
-    const activeBtn = document.querySelector('.'+cfg.btnCls);
-    if(activeBtn) activeBtn.classList.add('active');
-  }
-}
-
-function renderStats(){
-  const shiftStart = new Date(); shiftStart.setHours(8,0,0,0);
-  const shiftMins = Math.floor((Date.now()-shiftStart)/60000);
-  document.getElementById('shiftTime').textContent = 'Shift: 8:00 AM · '+Math.floor(shiftMins/60)+'h '+shiftMins%60+'m';
-
-  document.getElementById('statsGrid').innerHTML = `
-    <div class="stat-box"><div class="stat-num sn-calls">${stats.calls}</div><div class="stat-lbl">Calls</div><div class="stat-sub">Today</div></div>
-    <div class="stat-box"><div class="stat-num sn-talk">${fmtDur(stats.talkMin)}</div><div class="stat-lbl">Talk Time</div><div class="stat-sub">Total</div></div>
-    <div class="stat-box"><div class="stat-num sn-acw">${fmtDur(stats.acwMin)}</div><div class="stat-lbl">ACW Time</div><div class="stat-sub">Total</div></div>
-    <div class="stat-box"><div class="stat-num sn-handled">${stats.handled}</div><div class="stat-lbl">Handled</div><div class="stat-sub">Completed</div></div>
-    <div class="stat-box"><div class="stat-num sn-avg">${stats.avgTalkMin}m</div><div class="stat-lbl">Avg Talk</div><div class="stat-sub">Per call</div></div>
-    <div class="stat-box"><div class="stat-num sn-refused">${stats.refused}</div><div class="stat-lbl">Refused</div><div class="stat-sub">Today</div></div>
+    <!-- Details -->
+    <div class="info-card">
+      <div class="info-card-title">Agent Details</div>
+      <div class="info-row"><span class="info-label">Department</span><span class="info-val">${agent.group}</span></div>
+      <div class="info-row"><span class="info-label">RC Extension ID</span><span class="info-val">${agent.id || '—'}</span></div>
+      <div class="info-row"><span class="info-label">Status Mismatch</span><span class="info-val" style="color:${mismatch?'#dc2626':'#15803d'}">${mismatch ? 'Yes — needs attention' : 'No'}</span></div>
+      <div class="info-row"><span class="info-label">Time in current state</span><span class="info-val">${fmtDur(agent.dur)}</span></div>
+    </div>
   `;
 }
 
-function renderCallLog(){
-  const typeClass = {Inbound:'call-in',Outbound:'call-out',Missed:'call-mis'};
-  document.getElementById('callLog').innerHTML = callLog.slice(0,12).map(c=>`
-    <tr>
-      <td>${fmtTime(c.time)}</td>
-      <td class="${typeClass[c.type]}">${c.type}</td>
-      <td>${c.dur}m</td>
-      <td style="color:#64748b">${c.acw>0?c.acw+'m':'—'}</td>
-      <td><span class="disp-pill ${DISP_CLS[c.disp]}">${c.disp}</span></td>
-      <td style="color:#64748b;font-size:11px">${c.queue}</td>
-    </tr>`).join('');
+// Read agent from URL params
+const params = new URLSearchParams(location.search);
+const raw = params.get('agent');
+if (raw) {
+  try {
+    const agent = JSON.parse(decodeURIComponent(raw));
+    document.title = agent.name + ' — Agent Dashboard';
+    render(agent);
+  } catch(e) {
+    document.getElementById('emptyState').textContent = 'Could not load agent data.';
+  }
+} else {
+  document.getElementById('emptyState').innerHTML = 'No agent selected.<br><a href="rc-dashboard.html" style="color:#1a56db">← Back to Supervisor Dashboard</a>';
 }
-
-function renderQueues(){
-  document.getElementById('queueList').innerHTML = queues.map(q=>`
-    <div class="queue-row${q.name===AGENT.group?' my-team':''}">
-      <div>
-        <span class="queue-name">${q.name}</span>
-        ${q.name===AGENT.group?'<span class="queue-tag">My Team</span>':''}
-      </div>
-      <div class="queue-nums">
-        <div class="q-num"><div class="q-val ${q.waiting>4?'q-red':q.waiting>1?'q-yel':'q-green'}">${q.waiting}</div><div class="q-lbl">Waiting</div></div>
-        <div class="q-num"><div class="q-val q-yel">${q.longest}m</div><div class="q-lbl">Longest</div></div>
-        <div class="q-num"><div class="q-val q-green">${q.available}</div><div class="q-lbl">Avail</div></div>
-        <div class="q-num"><div class="q-val q-blue">${q.onCall}</div><div class="q-lbl">On Call</div></div>
-      </div>
-    </div>`).join('');
-}
-
-// ── Change CXone state ──
-function setCxState(state){
-  cxState = state;
-  cxDurMin = 0;
-  cxSinceTs = new Date();
-  renderStatus();
-}
-
-// ── Clock + Countdown ──
-const REFRESH_SEC = 3*60;
-let secsLeft = REFRESH_SEC;
-function tick(){
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const m=Math.floor(secsLeft/60), s=secsLeft%60;
-  document.getElementById('countdown').textContent = m>0?`${m}m ${s}s`:`${s}s`;
-  mvpDurMin++; cxDurMin++;
-  secsLeft--;
-  if(secsLeft<0){ secsLeft=REFRESH_SEC; doRefresh(); }
-  renderStatus();
-}
-setInterval(tick,1000);
-
-function doRefresh(){
-  // Simulate a data pull — replace with real API calls
-  queues.forEach(q=>{
-    q.waiting = Math.max(0,q.waiting+randInt(-2,3));
-    q.longest = Math.max(0,q.longest+randInt(-1,2));
-  });
-  renderQueues();
-}
-
-// ── Init ──
-renderIdentity();
-renderStatus();
-renderStats();
-renderCallLog();
-renderQueues();
-tick();
 </script>
 </body>
 </html>
