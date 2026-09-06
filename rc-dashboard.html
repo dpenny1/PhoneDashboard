@@ -47,8 +47,11 @@
   .c-sales      { color: #7c3aed; }
   .c-escal      { color: #0891b2; }
   .c-backoffice { color: #65a30d; }
-  .c-refused    { color: #be123c; }
-  .c-mismatch   { color: #b45309; }
+  .c-refused    { color: #dc2626; }   /* red   — alert */
+  .c-mismatch   { color: #d97706; }   /* amber — alert */
+  .c-cs         { color: #1a56db; }   /* blue  — Customer Service */
+  .c-qc         { color: #0d9488; }   /* teal  — Quality Control */
+  .c-offline    { color: #64748b; }
 
   /* ── Tab Bar (Teams) ── */
   .tab-bar {
@@ -647,22 +650,33 @@ function liveGroups(){
   return [...new Set(agents.map(a=>a.group).filter(g=>g&&g!=='Unassigned'))].sort();
 }
 
+// ── Department → color class map ──
+const DEPT_COLOR = {};
+ALLOWED_GROUPS.forEach((g, i) => { DEPT_COLOR[g] = i === 0 ? 'c-cs' : 'c-qc'; });
+
 // ── Render Cards ──
 function renderCards(){
-  const groups = liveGroups();
-  const staticCards = [
-    { key:'Refused',  label:'REFUSED',    cls:'c-refused'  },
-    { key:'Mismatch', label:'MISMATCHES', cls:'c-mismatch' },
-  ];
-  const groupCards = groups.map(g=>({ key:g, label:g.toUpperCase(), cls: GROUP_COLORS[g]?.cls||'c-offline' }));
-  const allCards = [...staticCards, ...groupCards];
-  document.getElementById('cardsRow').innerHTML = allCards.map(d=>{
-    const count = d.key==='Mismatch'?agents.filter(isMismatch).length : d.key==='Refused'?agents.filter(a=>a.cx.label==='Refused').length : agents.filter(a=>a.group===d.key).length;
-    return `<div class="metric-card ${d.cls}${activeGroup===d.key?' active':''}" onclick="setGroup('${d.key}')">
-      <div class="metric-num ${d.cls}">${count}</div>
+  const mismatchCount = agents.filter(isMismatch).length;
+  const refusedCount  = agents.filter(a=>a.cx.label==='Refused').length;
+
+  // Alert tiles only shown when non-zero; when non-zero they go first
+  const alertCards = [
+    mismatchCount > 0 ? { key:'Mismatch', label:'MISMATCHES', cls:'c-mismatch', count: mismatchCount } : null,
+    refusedCount  > 0 ? { key:'Refused',  label:'REFUSED',    cls:'c-refused',  count: refusedCount  } : null,
+  ].filter(Boolean);
+
+  const deptCards = ALLOWED_GROUPS.map(g=>({
+    key: g, label: g.toUpperCase(), cls: DEPT_COLOR[g]||'c-offline',
+    count: agents.filter(a=>a.group===g).length,
+  }));
+
+  const allCards = [...alertCards, ...deptCards];
+
+  document.getElementById('cardsRow').innerHTML = allCards.map(d=>`
+    <div class="metric-card ${d.cls}${activeGroup===d.key?' active':''}" onclick="setGroup('${d.key}')">
+      <div class="metric-num ${d.cls}">${d.count}</div>
       <div class="metric-label">${d.label}</div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 
 // ── Render Tabs (Teams) ──
