@@ -55,6 +55,14 @@ export async function fetchQueueStats() {
   return cxFetch('/inContactAPI/services/v28.0/skills/summary?fields=skillId,skillName,contactsQueued,agentsAvailable,longestQueueDuration');
 }
 
+// Set CXone agent state (Available, Break, Lunch, Training, etc.)
+export async function setAgentState(agentId, state) {
+  return cxFetch(`/inContactAPI/services/v28.0/agents/${agentId}/state`, {
+    method: 'POST',
+    body: JSON.stringify({ state }),
+  });
+}
+
 export async function sendAgentMessage(agentId, message) {
   return cxFetch(`/inContactAPI/services/v28.0/agents/${agentId}/message`, {
     method: 'POST',

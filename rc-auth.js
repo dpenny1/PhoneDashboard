@@ -4,7 +4,7 @@ const RC_REDIRECT    = 'https://dpenny1.github.io/PhoneDashboard/callback.html';
 const RC_AUTH_URL    = 'https://platform.ringcentral.com/restapi/oauth/authorize';
 const RC_TOKEN_URL   = 'https://platform.ringcentral.com/restapi/oauth/token';
 const RC_API_BASE    = 'https://platform.ringcentral.com/restapi/v1.0';
-const RC_SCOPES      = 'ReadPresence ReadCallLog ReadAccounts';
+const RC_SCOPES      = 'ReadPresence EditPresence ReadCallLog ReadAccounts EditExtensions';
 
 // ── PKCE helpers ──
 async function generatePKCE() {
@@ -125,4 +125,13 @@ export async function fetchCallLog(params = {}) {
 
 export async function fetchExtensions() {
   return rcFetch('/account/~/extension?perPage=200&type=User&status=Enabled');
+}
+
+// ── Set MVP presence/DND for any extension (requires admin or EditPresence scope) ──
+// dndStatus: 'TakeAllCalls' | 'DoNotAcceptAnyCalls' | 'DoNotAcceptDepartmentCalls'
+export async function setAgentPresence(extensionId, dndStatus) {
+  return rcFetch(`/account/~/extension/${extensionId}/presence`, {
+    method: 'PUT',
+    body: JSON.stringify({ dndStatus }),
+  });
 }

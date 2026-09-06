@@ -80,34 +80,6 @@
   .auth-check { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #15803d; }
   .check-dot  { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
 
-  /* Proceed button */
-  .btn-proceed {
-    background: #1a1a2e; color: #fff; border: none;
-    padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 600;
-    cursor: pointer; transition: background 0.15s; margin-top: 16px;
-  }
-  .btn-proceed:hover { background: #1e3a5f; }
-
-  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 700px; margin: 0 auto; padding: 0 20px 60px; }
-  .dash-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
-    padding: 28px 24px; text-decoration: none; color: inherit;
-    transition: all 0.15s; display: flex; flex-direction: column; gap: 10px;
-    border-top: 4px solid transparent; position: relative;
-  }
-  .dash-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
-  .dash-card.supervisor { border-top-color: #1a56db; }
-  .dash-card.agent      { border-top-color: #15803d; }
-
-  .card-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-  .icon-sup  { background: #dbeafe; }
-  .icon-agt  { background: #dcfce7; }
-  .card-name { font-size: 17px; font-weight: 700; color: #1a1a2e; }
-  .card-desc { font-size: 13px; color: #64748b; line-height: 1.5; }
-  .card-link { font-size: 12px; font-weight: 600; margin-top: 4px; }
-  .supervisor .card-link { color: #1a56db; }
-  .agent      .card-link { color: #15803d; }
-
   .user-chip {
     background: #1e293b; color: #e2e8f0; font-size: 11px;
     padding: 3px 10px; border-radius: 999px; display: none; align-items: center; gap: 6px;
@@ -121,7 +93,7 @@
   <div class="nav-left">
     <div class="nav-logo">RC</div>
     <span class="nav-title">RingCentral Dashboard</span>
-    <span style="font-size:10px;color:#475569;background:#1e293b;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:0.04em">v1.0.1</span>
+    <span style="font-size:10px;color:#475569;background:#1e293b;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:0.04em">v1.3.0</span>
   </div>
   <div class="nav-right" id="navRight">
     <!-- populated by JS -->
@@ -176,51 +148,21 @@
 
   </div>
 
-  <div id="proceedWrap" style="text-align:center;padding:8px 0 40px;display:none">
-    <button class="btn-proceed" id="proceedBtn">Continue to Dashboards →</button>
-  </div>
-</div>
-
-<!-- Dashboard Selection (shown after login) -->
-<div id="dashScreen" style="display:none">
-  <div class="hero">
-    <h1>RingCentral + CXone Dashboards</h1>
-    <p>Select a dashboard to get started.</p>
-  </div>
-  <div class="cards">
-    <a class="dash-card supervisor" href="rc-dashboard.html">
-      <div class="card-icon icon-sup">📊</div>
-      <div class="card-name">Supervisor Dashboard</div>
-      <div class="card-desc">Monitor all agents across teams. See MVP and CXone status side-by-side, queue stats, mismatches, and refused calls in real time.</div>
-      <div class="card-link">Open dashboard →</div>
-    </a>
-    <a class="dash-card agent" href="agent-dashboard.html">
-      <div class="card-icon icon-agt">🎧</div>
-      <div class="card-name">Agent Dashboard</div>
-      <div class="card-desc">Personal view — current status, today's stats, recent call history, team queue, and one-click CXone state changes.</div>
-      <div class="card-link">Open dashboard →</div>
-    </a>
-  </div>
 </div>
 
 <script type="module">
-import { isLoggedIn, rcLogin, rcLogout, rcFetch } from './rc-auth.js';
+import { isLoggedIn, rcLogin, rcLogout } from './rc-auth.js';
 import { cxIsLoggedIn, cxLogin, cxLogout } from './cx-auth.js';
-// cxLogin now accepts a raw token string (pasted from CXone session)
 
-function checkBothReady() {
-  const both = isLoggedIn() && cxIsLoggedIn();
-  document.getElementById('proceedWrap').style.display = both ? 'block' : 'none';
+// If already fully logged in, skip this page entirely
+if (isLoggedIn() && cxIsLoggedIn()) {
+  location.replace('rc-dashboard.html');
 }
 
 async function updateUI() {
   const rcOk = isLoggedIn();
   const cxOk = cxIsLoggedIn();
   const navRight = document.getElementById('navRight');
-  const bothOk = rcOk && cxOk;
-
-  document.getElementById('loginScreen').style.display = bothOk ? 'none'  : 'block';
-  document.getElementById('dashScreen').style.display  = bothOk ? 'block' : 'none';
 
   // RC box state
   const rcBox   = document.getElementById('rcBox');
@@ -251,24 +193,13 @@ async function updateUI() {
     document.getElementById('cxLoginBtn').onclick = handleCxLogin;
   }
 
-  checkBothReady();
-
-  // Nav bar
-  if (bothOk) {
-    let name = 'Signed in';
-    try {
-      const me = await rcFetch('/account/~/extension/~');
-      name = (me.contact?.firstName + ' ' + me.contact?.lastName).trim();
-    } catch(e) {}
-    const initials = name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
-    navRight.innerHTML = `
-      <div class="auth-status"><span class="auth-dot on"></span><span class="auth-label on">RC + CXone connected</span></div>
-      <div class="user-chip" style="display:flex"><div class="user-avatar">${initials}</div>${name}</div>
-      <button class="btn-signout" id="signOutBtn">Sign out</button>`;
-    document.getElementById('signOutBtn').onclick = () => { rcLogout(); cxLogout(); updateUI(); };
-  } else {
-    navRight.innerHTML = `<div class="auth-status"><span class="auth-dot off"></span><span class="auth-label">Not signed in</span></div>`;
+  // Both ready → redirect
+  if (rcOk && cxOk) {
+    location.replace('rc-dashboard.html');
+    return;
   }
+
+  navRight.innerHTML = `<div class="auth-status"><span class="auth-dot off"></span><span class="auth-label">Not signed in</span></div>`;
 }
 
 function handleCxLogin() {
@@ -285,11 +216,6 @@ function handleCxLogin() {
     err.style.display = 'block';
   }
 }
-
-document.getElementById('proceedBtn')?.addEventListener('click', () => {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('dashScreen').style.display  = 'block';
-});
 
 updateUI();
 </script>

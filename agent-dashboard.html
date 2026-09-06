@@ -84,6 +84,13 @@
   .info-val   { font-weight: 600; color: #1a1a2e; }
 
   .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; font-size: 14px; }
+  .act-btn { padding: 8px 16px; border-radius: 7px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+  .act-btn:hover { opacity: 0.85; }
+  .act-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .act-green { background: #dcfce7; color: #15803d; }
+  .act-amber { background: #fef3c7; color: #92400e; }
+  .act-blue  { background: #dbeafe; color: #1d4ed8; }
+  .act-red   { background: #fee2e2; color: #dc2626; }
 </style>
 </head>
 <body>
@@ -92,7 +99,7 @@
   <div class="nav-left">
     <div class="nav-logo">RC</div>
     <span class="nav-title">Agent Dashboard</span>
-    <span style="font-size:10px;color:#475569;background:#1e293b;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:0.04em">v1.1.0</span>
+    <span style="font-size:10px;color:#475569;background:#1e293b;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:0.04em">v1.3.0</span>
   </div>
   <div class="nav-right">
     <a href="rc-dashboard.html" class="back-link">← Supervisor Dashboard</a>
@@ -169,7 +176,80 @@ function render(agent){
       <div class="info-row"><span class="info-label">Status Mismatch</span><span class="info-val" style="color:${mismatch?'#dc2626':'#15803d'}">${mismatch ? 'Yes — needs attention' : 'No'}</span></div>
       <div class="info-row"><span class="info-label">Time in current state</span><span class="info-val">${fmtDur(agent.dur)}</span></div>
     </div>
+
+    <!-- Actions -->
+    <div class="info-card">
+      <div class="info-card-title">Actions</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px">Set MVP Status</div>
+          <div style="display:flex;gap:8px">
+            <button class="act-btn act-green" onclick="setMvpStatus('${agent.id}','TakeAllCalls',this)">✅ Available</button>
+            <button class="act-btn act-amber" onclick="setMvpStatus('${agent.id}','DoNotAcceptAnyCalls',this)">🔕 Do Not Disturb</button>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px">Set CXone State</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="act-btn act-green"  onclick="setCxState('${agent.cxId||''}','Available',this)">✅ Available</button>
+            <button class="act-btn act-amber"  onclick="setCxState('${agent.cxId||''}','Break',this)">☕ Break</button>
+            <button class="act-btn act-amber"  onclick="setCxState('${agent.cxId||''}','Lunch',this)">🍽 Lunch</button>
+            <button class="act-btn act-blue"   onclick="setCxState('${agent.cxId||''}','Training',this)">📚 Training</button>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px">CXone Session</div>
+          <button class="act-btn act-red" onclick="doCxLogout('${agent.cxId||''}','${agent.name}',this)">⏏ Logout from CXone</button>
+        </div>
+
+        <div id="actionMsg" style="font-size:12px;display:none"></div>
+      </div>
+    </div>
   `;
+}
+
+function showMsg(msg, color) {
+  const el = document.getElementById('actionMsg');
+  if (!el) return;
+  el.textContent = msg; el.style.color = color; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+async function setMvpStatus(rcId, dndStatus, btn) {
+  if (!rcId) { showMsg('RC ID not available.', '#dc2626'); return; }
+  btn.disabled = true;
+  try {
+    const { setAgentPresence } = await import('./rc-auth.js');
+    await setAgentPresence(rcId, dndStatus);
+    showMsg('MVP status updated.', '#15803d');
+  } catch(e) { showMsg('Failed: ' + e.message, '#dc2626'); }
+  btn.disabled = false;
+}
+
+async function setCxState(cxId, state, btn) {
+  if (!cxId) { showMsg('CXone ID not available — CXone data must be connected.', '#dc2626'); return; }
+  btn.disabled = true;
+  try {
+    const { setAgentState } = await import('./cx-auth.js');
+    await setAgentState(cxId, state);
+    showMsg('CXone state updated to ' + state + '.', '#15803d');
+  } catch(e) { showMsg('Failed: ' + e.message, '#dc2626'); }
+  btn.disabled = false;
+}
+
+async function doCxLogout(cxId, name, btn) {
+  if (!cxId) { showMsg('CXone ID not available — CXone data must be connected.', '#dc2626'); return; }
+  if (!confirm('Log ' + name + ' out of CXone?')) return;
+  btn.disabled = true;
+  try {
+    const { logoutAgent } = await import('./cx-auth.js');
+    await logoutAgent(cxId);
+    showMsg(name + ' logged out of CXone.', '#15803d');
+  } catch(e) { showMsg('Failed: ' + e.message, '#dc2626'); }
+  btn.disabled = false;
 }
 
 // Read agent from URL params
