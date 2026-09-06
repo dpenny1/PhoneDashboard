@@ -152,11 +152,13 @@
   /* Action cell */
   .action-cell { white-space: nowrap; display: flex; gap: 4px; align-items: center; padding: 4px 6px; }
   .action-select {
-    font-size: 11px; padding: 3px 4px; border: 1px solid #e2e8f0;
+    font-size: 11px; padding: 2px 2px; border: 1px solid #e2e8f0;
     border-radius: 5px; background: #f8faff; color: #334155;
-    cursor: pointer; max-width: 100px;
+    cursor: pointer; width: 28px; appearance: none; text-align: center;
+    flex-shrink: 0;
   }
-  .action-select:focus { outline: none; border-color: #1a56db; }
+  .action-select:focus { outline: none; border-color: #1a56db; width: auto; }
+  .action-select:hover { border-color: #94a3b8; width: auto; }
   .action-btn-logout {
     font-size: 11px; padding: 3px 8px; border: 1px solid #fecaca;
     border-radius: 5px; background: #fff; color: #dc2626;
@@ -817,8 +819,28 @@ function renderContent(){
               return `<tr class="${rowCls}">
                 <td class="agent-name"><a href="agent-dashboard.html?agent=${agentParam}" style="color:inherit;text-decoration:none;font-weight:600">${a.name}</a></td>
                 ${showGroup?`<td><span class="dept-badge">${a.group}</span></td>`:''}
-                <td><span class="pill ${a.mvp.cls}"><span class="pill-dot"></span>${a.mvp.label}</span></td>
-                <td><span class="pill ${a.cx.cls}"><span class="pill-dot"></span>${a.cx.label}</span></td>
+                <td onclick="event.stopPropagation()">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span class="pill ${a.mvp.cls}"><span class="pill-dot"></span>${a.mvp.label}</span>
+                    <select class="action-select" title="Change MVP Status" onchange="setMvpStatus('${a.rcId}',this.value,this)">
+                      <option value="">✏</option>
+                      <option value="TakeAllCalls">✅ Available</option>
+                      <option value="DoNotAcceptAnyCalls">🔕 Do Not Disturb</option>
+                    </select>
+                  </div>
+                </td>
+                <td onclick="event.stopPropagation()">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span class="pill ${a.cx.cls}"><span class="pill-dot"></span>${a.cx.label}</span>
+                    <select class="action-select" title="Change CXone State" onchange="setCxState('${a.cxId||''}',this.value,this)">
+                      <option value="">✏</option>
+                      <option value="Available">✅ Available</option>
+                      <option value="Break">☕ Break</option>
+                      <option value="Lunch">🍽 Lunch</option>
+                      <option value="Training">📚 Training</option>
+                    </select>
+                  </div>
+                </td>
                 <td style="color:#64748b;font-size:12px">${fmtTime(a.since)}</td>
                 <td class="${durCls}">${fmtDur(a.dur)}</td>
                 <td>
@@ -826,18 +848,6 @@ function renderContent(){
                   ${fired.map(r=>`<span class="alert-pill ${r.severity==='high'?'':'warn'}" title="${r.name}">🔔 ${r.name}</span>`).join(' ')}
                 </td>
                 <td class="action-cell" onclick="event.stopPropagation()">
-                  <select class="action-select" title="Set MVP Status" onchange="setMvpStatus('${a.rcId}',this.value,this)">
-                    <option value="">MVP…</option>
-                    <option value="TakeAllCalls">✅ Available</option>
-                    <option value="DoNotAcceptAnyCalls">🔕 Do Not Disturb</option>
-                  </select>
-                  <select class="action-select" title="Set CXone State" onchange="setCxState('${a.cxId||''}',this.value,this)">
-                    <option value="">CXone…</option>
-                    <option value="Available">✅ Available</option>
-                    <option value="Break">☕ Break</option>
-                    <option value="Lunch">🍽 Lunch</option>
-                    <option value="Training">📚 Training</option>
-                  </select>
                   <button class="action-btn-logout" title="Logout from CXone" onclick="cxLogoutAgent('${a.cxId||''}','${a.name}',this)">⏏ Logout</button>
                 </td>
               </tr>`;
