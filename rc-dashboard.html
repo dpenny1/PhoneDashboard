@@ -375,6 +375,9 @@
   <div style="font-size:14px;color:#64748b;font-weight:500">Loading agent data...</div>
 </div>
 
+<!-- Partial data warning -->
+<div id="fetchWarnBanner" style="display:none;background:#fef3c7;border-bottom:1px solid #fcd34d;padding:6px 20px;font-size:12px;color:#92400e;font-weight:500"></div>
+
 <!-- Content: status panels -->
 <div class="content" id="content"></div>
 
@@ -472,7 +475,23 @@ async function checkAuth() {
 async function fetchData() {
   showLoadingState(true);
   try {
-    const [rcData, cxData] = await Promise.all([fetchRC(), fetchCX()]);
+    const [rcResult, cxResult] = await Promise.allSettled([fetchRC(), fetchCX()]);
+    const rcData = rcResult.status === 'fulfilled' ? rcResult.value : [];
+    const cxData = cxResult.status === 'fulfilled' ? cxResult.value : [];
+
+    if (rcResult.status === 'rejected') console.warn('RC data failed:', rcResult.reason?.message);
+    if (cxResult.status === 'rejected') console.warn('CXone data failed:', cxResult.reason?.message);
+
+    // Show a banner if either source failed but don't block the page
+    const banner = document.getElementById('fetchWarnBanner');
+    if (banner) {
+      const msgs = [];
+      if (rcResult.status === 'rejected')  msgs.push('RC data unavailable');
+      if (cxResult.status === 'rejected')  msgs.push('CXone data unavailable');
+      banner.textContent = msgs.length ? '⚠ ' + msgs.join(' · ') + ' — showing partial data' : '';
+      banner.style.display = msgs.length ? 'block' : 'none';
+    }
+
     agents = mergeAgents(rcData, cxData);
     render();
   } catch(e) {
