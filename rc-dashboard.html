@@ -152,13 +152,12 @@
   /* Action cell */
   .action-cell { white-space: nowrap; display: flex; gap: 4px; align-items: center; padding: 4px 6px; }
   .action-select {
-    font-size: 11px; padding: 2px 2px; border: 1px solid #e2e8f0;
-    border-radius: 5px; background: #f8faff; color: #334155;
-    cursor: pointer; width: 28px; appearance: none; text-align: center;
-    flex-shrink: 0;
+    font-size: 12px; padding: 4px 6px; border: 1px solid #e2e8f0;
+    border-radius: 6px; background: #f8faff; color: #334155;
+    cursor: pointer; width: 100%; max-width: 150px; font-weight: 500;
   }
-  .action-select:focus { outline: none; border-color: #1a56db; width: auto; }
-  .action-select:hover { border-color: #94a3b8; width: auto; }
+  .action-select:focus { outline: none; border-color: #1a56db; }
+  .action-select:hover { border-color: #94a3b8; }
   .action-btn-logout {
     font-size: 11px; padding: 3px 8px; border: 1px solid #fecaca;
     border-radius: 5px; background: #fff; color: #dc2626;
@@ -528,14 +527,15 @@ async function fetchData() {
     if (rcResult.status === 'rejected') console.warn('RC data failed:', rcResult.reason?.message);
     if (cxResult.status === 'rejected') console.warn('CXone data failed:', cxResult.reason?.message);
 
-    // Show a banner if either source failed but don't block the page
+    // Only banner if RC itself fails — CXone CORS failure is expected and silent
     const banner = document.getElementById('fetchWarnBanner');
     if (banner) {
-      const msgs = [];
-      if (rcResult.status === 'rejected')  msgs.push('RC data unavailable');
-      if (cxResult.status === 'rejected')  msgs.push('CXone data unavailable');
-      banner.textContent = msgs.length ? '⚠ ' + msgs.join(' · ') + ' — showing partial data' : '';
-      banner.style.display = msgs.length ? 'block' : 'none';
+      if (rcResult.status === 'rejected') {
+        banner.textContent = '⚠ RC data unavailable — check your connection and try again';
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
     }
 
     agents = mergeAgents(rcData, cxData);
@@ -820,26 +820,23 @@ function renderContent(){
                 <td class="agent-name"><a href="agent-dashboard.html?agent=${agentParam}" style="color:inherit;text-decoration:none;font-weight:600">${a.name}</a></td>
                 ${showGroup?`<td><span class="dept-badge">${a.group}</span></td>`:''}
                 <td onclick="event.stopPropagation()">
-                  <div style="display:flex;align-items:center;gap:6px">
-                    <span class="pill ${a.mvp.cls}"><span class="pill-dot"></span>${a.mvp.label}</span>
-                    <select class="action-select" title="Change MVP Status" onchange="setMvpStatus('${a.rcId}',this.value,this)">
-                      <option value="">✏</option>
-                      <option value="TakeAllCalls">✅ Available</option>
-                      <option value="DoNotAcceptAnyCalls">🔕 Do Not Disturb</option>
-                    </select>
-                  </div>
+                  <select class="action-select" onchange="setMvpStatus('${a.rcId}',this.value,this)">
+                    <option value="TakeAllCalls" ${a.mvp.label==='Available'?'selected':''}>✅ Available</option>
+                    <option value="DoNotAcceptAnyCalls" ${a.mvp.label==='Do Not Disturb'?'selected':''}>🔕 Do Not Disturb</option>
+                    <option value="__oncall" disabled ${a.mvp.label==='On a Call'?'selected':''}>📞 On a Call</option>
+                    <option value="__offline" disabled ${a.mvp.label==='Offline'?'selected':''}>⚫ Offline</option>
+                  </select>
                 </td>
                 <td onclick="event.stopPropagation()">
-                  <div style="display:flex;align-items:center;gap:6px">
-                    <span class="pill ${a.cx.cls}"><span class="pill-dot"></span>${a.cx.label}</span>
-                    <select class="action-select" title="Change CXone State" onchange="setCxState('${a.cxId||''}',this.value,this)">
-                      <option value="">✏</option>
-                      <option value="Available">✅ Available</option>
-                      <option value="Break">☕ Break</option>
-                      <option value="Lunch">🍽 Lunch</option>
-                      <option value="Training">📚 Training</option>
-                    </select>
-                  </div>
+                  <select class="action-select" onchange="setCxState('${a.cxId||''}',this.value,this)">
+                    <option value="Available" ${a.cx.label==='Available'?'selected':''}>✅ Available</option>
+                    <option value="Break" ${a.cx.label==='Break'?'selected':''}>☕ Break</option>
+                    <option value="Lunch" ${a.cx.label==='Lunch'?'selected':''}>🍽 Lunch</option>
+                    <option value="Training" ${a.cx.label==='Training'?'selected':''}>📚 Training</option>
+                    <option value="__oncall" disabled ${a.cx.label==='On Call'?'selected':''}>📞 On Call</option>
+                    <option value="__acw" disabled ${a.cx.label==='ACW'?'selected':''}>📝 ACW</option>
+                    <option value="__loggedout" disabled ${a.cx.label==='Logged Out'?'selected':''}>⚫ Logged Out</option>
+                  </select>
                 </td>
                 <td style="color:#64748b;font-size:12px">${fmtTime(a.since)}</td>
                 <td class="${durCls}">${fmtDur(a.dur)}</td>
@@ -1164,7 +1161,7 @@ function refreshData() { fetchData(); }
 
 // ── Agent action handlers ──────────────────────────────────────────────────────
 async function setMvpStatus(rcId, dndStatus, selectEl) {
-  if (!rcId || !dndStatus) return;
+  if (!rcId || !dndStatus || dndStatus.startsWith('__')) return;
   selectEl.disabled = true;
   try {
     const { setAgentPresence } = await import('./rc-auth.js');
@@ -1179,7 +1176,7 @@ async function setMvpStatus(rcId, dndStatus, selectEl) {
 }
 
 async function setCxState(cxId, state, selectEl) {
-  if (!state) return;
+  if (!state || state.startsWith('__')) return;
   if (!cxId) { alert('CXone Agent ID not available — CXone data must be connected.'); selectEl.value = ''; return; }
   selectEl.disabled = true;
   try {
