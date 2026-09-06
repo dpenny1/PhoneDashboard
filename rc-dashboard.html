@@ -50,7 +50,7 @@
   .c-refused    { color: #dc2626; }   /* red   — alert */
   .c-mismatch   { color: #d97706; }   /* amber — alert */
   .c-cs         { color: #1a56db; }   /* blue  — Customer Service */
-  .c-qc         { color: #0d9488; }   /* teal  — Quality Control */
+  .c-qc         { color: #7c3aed; }   /* purple — Quality Control */
   .c-offline    { color: #64748b; }
 
   /* ── Tab Bar (Teams) ── */
@@ -201,6 +201,14 @@
   .leg-item { display:flex; align-items:center; gap:6px; color:#475569; }
   .leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
+  /* ── Nav buttons ── */
+  .btn-signout {
+    background: transparent; color: #64748b; border: 1px solid #334155;
+    padding: 4px 10px; border-radius: 5px; font-size: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-signout:hover { color: #f87171; border-color: #f87171; }
+
   /* ── Rules button in nav ── */
   .btn-rules {
     display: flex; align-items: center; gap: 6px;
@@ -335,6 +343,7 @@
     </button>
     <span class="live-pill"><span class="live-dot"></span>LIVE</span>
     <span class="nav-time" id="clock"></span>
+    <button class="btn-signout" onclick="doSignOut()" title="Sign out">⏻ Sign out</button>
   </div>
 </nav>
 
@@ -487,6 +496,14 @@ function cxLabel(state) {
 
 // ── Live agent data (populated by fetchData) ──
 let agents = [];
+
+// ── Sign out ──────────────────────────────────────────────────
+async function doSignOut() {
+  const { rcLogout }  = await import('./rc-auth.js');
+  const { cxLogout }  = await import('./cx-auth.js');
+  rcLogout(); cxLogout();
+  location.href = 'index.html';
+}
 
 // ── Auth + data loading ───────────────────────────────────────
 
