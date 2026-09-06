@@ -515,11 +515,12 @@ async function fetchRC() {
   const presMap = {};
   (presResp.records || []).forEach(p => { presMap[p.extension?.id] = p; });
   return (extResp.records || []).map(ext => ({
-    rcId:      ext.id,
-    name:      ((ext.contact?.firstName || '') + ' ' + (ext.contact?.lastName || '')).trim(),
-    email:     ext.contact?.email || '',
-    extension: ext.extensionNumber,
-    mvpLabel:  mvpLabel(presMap[ext.id] || {}),
+    rcId:       ext.id,
+    name:       ((ext.contact?.firstName || '') + ' ' + (ext.contact?.lastName || '')).trim(),
+    email:      ext.contact?.email || '',
+    extension:  ext.extensionNumber,
+    department: ext.contact?.department || '',
+    mvpLabel:   mvpLabel(presMap[ext.id] || {}),
   }));
 }
 
@@ -548,7 +549,7 @@ function mergeAgents(rcList, cxList) {
     merged.push({
       id:    i,
       name:  rc.name,
-      group: cx?.team || 'Unassigned',
+      group: rc.department || cx?.team || 'Unassigned',
       mvp:   { label: rc.mvpLabel,           cls: MVP_CLS[rc.mvpLabel]          || 'mvp-offline' },
       cx:    { label: cx?.cxState || 'Logged Out', cls: CX_CLS[cx?.cxState || 'Logged Out'] || 'cx-loggedout' },
       dur:   durMin,
@@ -636,9 +637,21 @@ function clearFilters(){
   render();
 }
 
+// ── Live department list derived from real agent data ──
+function liveGroups(){
+  return [...new Set(agents.map(a=>a.group).filter(g=>g&&g!=='Unassigned'))].sort();
+}
+
 // ── Render Cards ──
 function renderCards(){
-  document.getElementById('cardsRow').innerHTML = CARD_DEFS.map(d=>{
+  const groups = liveGroups();
+  const staticCards = [
+    { key:'Refused',  label:'REFUSED',    cls:'c-refused'  },
+    { key:'Mismatch', label:'MISMATCHES', cls:'c-mismatch' },
+  ];
+  const groupCards = groups.map(g=>({ key:g, label:g.toUpperCase(), cls: GROUP_COLORS[g]?.cls||'c-offline' }));
+  const allCards = [...staticCards, ...groupCards];
+  document.getElementById('cardsRow').innerHTML = allCards.map(d=>{
     const count = d.key==='Mismatch'?agents.filter(isMismatch).length : d.key==='Refused'?agents.filter(a=>a.cx.label==='Refused').length : agents.filter(a=>a.group===d.key).length;
     return `<div class="metric-card ${d.cls}${activeGroup===d.key?' active':''}" onclick="setGroup('${d.key}')">
       <div class="metric-num ${d.cls}">${count}</div>
@@ -649,10 +662,11 @@ function renderCards(){
 
 // ── Render Tabs (Teams) ──
 function renderTabs(){
+  const groups = liveGroups();
   const teamTabs = [
-    {key:'All',label:'All Teams'},
-    ...GROUPS.map(g=>({key:g,label:g})),
-    {key:'Refused',label:'🚫 Refused'},
+    {key:'All',     label:'All Teams'},
+    ...groups.map(g=>({key:g, label:g})),
+    {key:'Refused', label:'🚫 Refused'},
     {key:'Mismatch',label:'⚠ Mismatches'},
   ];
   document.getElementById('tabBar').innerHTML = teamTabs.map(t=>{
