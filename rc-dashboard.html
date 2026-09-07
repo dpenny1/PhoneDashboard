@@ -532,6 +532,94 @@ async function checkAuth() {
   }
 }
 
+
+// ── In-browser auto-logout enforcement ────────────────────────────────────────
+// The Cloudflare worker in worker.js is the unattended version of this and is
+// not deployed. This runs only while the dashboard is open, using YOUR CXone
+// token, and never acts on its own — past the cutoff it lists who is still
+// logged in and asks. Answering the prompt (either way) settles those agents
+// for the rest of the day so it does not nag on every refresh; "Run now" in the
+// Rules panel re-opens it if you cancelled by mistake.
+//
+// The record is per browser, so a second supervisor with the dashboard open
+// gets their own prompt. Logging out an already-logged-out agent is harmless.
+const ENFORCE_DONE_KEY = 'enforce_actioned_v1';
+
+function enforceDone() {
+  try { return JSON.parse(localStorage.getItem(ENFORCE_DONE_KEY) || '{}'); }
+  catch (e) { return {}; }
+}
+function markEnforced(ids) {
+  const done = enforceDone(), today = new Date().toDateString();
+  ids.forEach(id => { done[id] = today; });
+  try { localStorage.setItem(ENFORCE_DONE_KEY, JSON.stringify(done)); } catch (e) {}
+}
+function alreadyEnforced(id) {
+  return enforceDone()[id] === new Date().toDateString();
+}
+
+// Closed right now, per the hours set in the Rules panel?
+function pastCutoff(cfg) {
+  const now = new Date(), day = now.getDay();
+  if (cfg.weekendsOff && (day === 0 || day === 6)) return true;
+  const h = now.getHours() + now.getMinutes() / 60;
+  return h < cfg.startHour || h >= cfg.endHour;
+}
+
+// Agents still in CXone after hours that we have not already asked about
+function overdueAgents() {
+  return agents.filter(a =>
+    a.cxId && a.cx.label !== 'Logged Out' && !alreadyEnforced(a.cxId));
+}
+
+let _enforceBusy = false;
+
+async function runEnforcementSweep(manual) {
+  const cfg = getEnforceConfig();
+  if (_enforceBusy) return;
+  if (!manual && !cfg.enabled) return;
+  if (!pastCutoff(cfg)) {
+    if (manual) alert('The contact center is still open — nothing to enforce.');
+    return;
+  }
+
+  const overdue = overdueAgents();
+  if (!overdue.length) {
+    if (manual) alert('No agents are logged into CXone past the cutoff.');
+    return;
+  }
+
+  _enforceBusy = true;
+  try {
+    const list = overdue.map(a => '  \u2022 ' + a.name + '  (' + a.cx.label + ')').join('\n');
+    const go = confirm(
+      'The contact center is closed and ' + overdue.length + ' agent' +
+      (overdue.length > 1 ? 's are' : ' is') + ' still logged into CXone:\n\n' +
+      list + '\n\nLog them out of CXone now?');
+
+    // Settled either way — Run now in the Rules panel brings it back
+    markEnforced(overdue.map(a => a.cxId));
+    if (!go) return;
+
+    const { logoutAgent } = await import('./cx-auth.js');
+    const failed = [];
+    for (const a of overdue) {
+      try { await logoutAgent(a.cxId); }
+      catch (e) { failed.push(a.name + ': ' + e.message); }
+    }
+    if (failed.length) alert('Could not log out:\n\n' + failed.join('\n'));
+    setTimeout(fetchData, 2000);
+  } finally {
+    _enforceBusy = false;
+  }
+}
+
+// Lets you re-run after cancelling, and clears today's record first
+function runEnforcementNow() {
+  try { localStorage.removeItem(ENFORCE_DONE_KEY); } catch (e) {}
+  runEnforcementSweep(true);
+}
+
 async function fetchData() {
   showLoadingState(true);
   try {
@@ -555,6 +643,7 @@ async function fetchData() {
 
     agents = mergeAgents(rcData, cxData);
     render();
+    runEnforcementSweep(false);
   } catch(e) {
     console.error('Data fetch failed:', e);
     showError(e.message);
@@ -1064,7 +1153,12 @@ function renderRulesPanel() {
       </div>
       <div style="margin-top:10px;font-size:11px;padding:8px 10px;border-radius:5px;background:rgba(255,255,255,0.07);color:#94a3b8">
         Timezone: <strong style="color:#e2e8f0">America/Chicago</strong> &nbsp;·&nbsp;
-        Sequence: <strong style="color:#4ade80">Warn agent</strong> → <strong style="color:#fbbf24">Alert supervisor</strong> → <strong style="color:#f87171">Auto-logout</strong>
+        Runs only while this dashboard is open, and always asks before logging anyone out.
+        <div style="margin-top:10px">
+          <button class="btn-signin" onclick="runEnforcementNow()" style="background:#b45309">
+            ⏻ Run auto-logout check now
+          </button>
+        </div>
       </div>
     </div>
 
