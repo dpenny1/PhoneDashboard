@@ -136,7 +136,38 @@ function initials(name){
   return name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
 }
 
+// The page is built from a snapshot handed over in the URL, so after an action
+// we update this copy and re-render — otherwise the pills keep showing the old
+// values even though the change went through.
+let currentAgent = null;
+
+// Same mapping the supervisor dashboard uses, so both pages agree
+function mvpLabelFrom(p) {
+  if (p.telephonyStatus === 'CallConnected') return 'On a Call';
+  const dnd = p.dndStatus || '';
+  if (dnd === 'DoNotAcceptAnyCalls' || dnd === 'DoNotAcceptDepartmentCalls') return 'Do Not Disturb';
+  if ((p.presenceStatus || p.userStatus) === 'Busy') return 'On a Call';
+  if (p.presenceStatus === 'Available' || p.userStatus === 'Available') return 'Available';
+  return 'Offline';
+}
+
+// Read the extension back from RingCentral rather than assuming what the new
+// label is — 'TakeAllCalls' only means Available if they are not on a call.
+async function refreshMvpFromRC() {
+  if (!currentAgent || !currentAgent.id) return;
+  try {
+    const { rcFetch } = await import('./rc-auth.js');
+    const p = await rcFetch('/account/~/extension/' + currentAgent.id + '/presence?detailedTelephonyState=true');
+    currentAgent.mvp = mvpLabelFrom(p);
+    render(currentAgent);
+  } catch (e) {
+    // The update itself succeeded; leave the pill rather than showing a guess
+    console.warn('Could not re-read presence:', e.message);
+  }
+}
+
 function render(agent){
+  currentAgent = agent;
   const mismatch = isMismatch(agent.mvp, agent.cx);
   // CXone actions only mean anything against a live CXone session. Without one
   // (no linked account, or logged out) the API rejects them, so don't offer them.
@@ -236,7 +267,9 @@ async function setMvpStatus(rcId, dndStatus, btn) {
   try {
     const { setAgentPresence } = await import('./rc-auth.js');
     await setAgentPresence(rcId, dndStatus);
+    await refreshMvpFromRC();          // re-render first — this rebuilds #actionMsg
     showMsg('MVP status updated.', '#15803d');
+    return;                            // btn belongs to the old DOM now
   } catch(e) { showMsg('Failed: ' + e.message, '#dc2626'); }
   btn.disabled = false;
 }
@@ -247,7 +280,9 @@ async function setCxState(cxId, state, btn) {
   try {
     const { setAgentState } = await import('./cx-auth.js');
     await setAgentState(cxId, state);
+    if (currentAgent) { currentAgent.cx = state; render(currentAgent); }
     showMsg('CXone state updated to ' + state + '.', '#15803d');
+    return;
   } catch(e) { showMsg('Failed: ' + e.message, '#dc2626'); }
   btn.disabled = false;
 }
@@ -259,7 +294,9 @@ async function doCxLogout(cxId, name, btn) {
   try {
     const { logoutAgent } = await import('./cx-auth.js');
     await logoutAgent(cxId);
+    if (currentAgent) { currentAgent.cx = 'Logged Out'; render(currentAgent); }
     showMsg(name + ' logged out of CXone.', '#15803d');
+    return;
   } catch(e) { showMsg('Failed: ' + e.message, '#dc2626'); }
   btn.disabled = false;
 }
