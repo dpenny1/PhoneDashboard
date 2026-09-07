@@ -41,7 +41,7 @@
   .metric-num { font-size: 42px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
   .metric-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
 
-  .c-all        { color: #1a56db; }
+  .c-all        { color: #0d9488; }   /* teal  — All Teams (distinct from CS blue) */
   .c-billing    { color: #dc2626; }
   .c-support    { color: #d97706; }
   .c-sales      { color: #7c3aed; }
@@ -54,33 +54,37 @@
   .c-offline    { color: #64748b; }
 
   /* ── Tab Bar (Teams) — raised tabs, same idea as the CIS dashboard ── */
+  /* flex:1 + min-width match .metric-card exactly, so every tab lines up
+     under the tile it belongs to and both rows resize together */
   .tab-bar {
     background: #f1f5f9; border-bottom: 2px solid #cbd5e1;
-    padding: 7px 20px 0; display: flex; align-items: flex-end; gap: 3px; overflow-x: auto;
+    display: flex; gap: 0; align-items: flex-end; overflow-x: auto;
   }
   .tab-item {
-    padding: 11px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+    flex: 1; min-width: 130px;
+    padding: 11px 8px; font-size: 13px; font-weight: 600; cursor: pointer;
     color: #475569; background: transparent; border: 1px solid transparent;
     border-radius: 8px 8px 0 0; white-space: nowrap;
-    display: flex; align-items: center; gap: 7px; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    transition: all 0.15s;
   }
   .tab-item:hover { color: #1a1a2e; background: rgba(255,255,255,0.65); }
-  /* Selected tab lifts out of the strip and carries an accent bar */
+  /* Selected tab lifts out of the strip; the accent bar takes the tab's colour */
   .tab-item.active {
     background: #fff; border-color: #cbd5e1; border-bottom-color: #fff;
-    color: #1a56db; margin-bottom: -2px; position: relative; z-index: 1;
-    box-shadow: inset 0 3px 0 #1a56db;
+    margin-bottom: -2px; position: relative; z-index: 1;
+    box-shadow: inset 0 3px 0 currentColor;
   }
+  .tab-item.active.c-all      { color: #0d9488; }
+  .tab-item.active.c-cs       { color: #1a56db; }
+  .tab-item.active.c-qc       { color: #a21caf; }
+  .tab-item.active.c-refused  { color: #dc2626; }
+  .tab-item.active.c-mismatch { color: #d97706; }
   .tab-count {
     background: #e2e8f0; color: #64748b; font-size: 11px; font-weight: 700;
     padding: 2px 8px; border-radius: 999px; min-width: 22px; text-align: center;
   }
-  .tab-item.active .tab-count { background: #dbeafe; color: #1a56db; }
-  /* Alert tabs keep their own colour when selected */
-  .tab-item.active.c-refused  { color: #dc2626; box-shadow: inset 0 3px 0 #dc2626; }
-  .tab-item.active.c-refused  .tab-count { background: #fee2e2; color: #dc2626; }
-  .tab-item.active.c-mismatch { color: #d97706; box-shadow: inset 0 3px 0 #d97706; }
-  .tab-item.active.c-mismatch .tab-count { background: #fef3c7; color: #92400e; }
+  .tab-item.active .tab-count { background: rgba(0,0,0,0.07); color: inherit; }
 
   /* ── Toolbar ── */
   .toolbar {
