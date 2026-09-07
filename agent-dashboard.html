@@ -191,14 +191,15 @@ function render(agent){
         <span class="status-pill-lg ${mvpCls(agent.mvp)}">
           <span class="pill-dot-lg"></span>${agent.mvp}
         </span>
-        <div class="duration-line">In this status for <span class="duration-val">${fmtDur(agent.dur)}</span></div>
+        <!-- No duration here: agent.dur is the CXone state duration. RingCentral
+             presence gives us no equivalent, so showing it would be wrong. -->
       </div>
       <div class="status-card">
         <div class="status-card-label">CXone Contact Center Status</div>
         <span class="status-pill-lg ${cxCls(agent.cx)}">
           <span class="pill-dot-lg"></span>${agent.cx}
         </span>
-        <div class="duration-line">In this status for <span class="duration-val">${fmtDur(agent.dur)}</span></div>
+        <div class="duration-line">CXone State Time <span class="duration-val">${fmtDur(agent.dur)}</span></div>
       </div>
     </div>
 
