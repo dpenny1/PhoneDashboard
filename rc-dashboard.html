@@ -53,23 +53,34 @@
   .c-qc         { color: #a21caf; }   /* purple — Quality Control */
   .c-offline    { color: #64748b; }
 
-  /* ── Tab Bar (Teams) ── */
+  /* ── Tab Bar (Teams) — raised tabs, same idea as the CIS dashboard ── */
   .tab-bar {
-    background: #fff; border-bottom: 1px solid #e2e8f0;
-    padding: 0 20px; display: flex; align-items: flex-end; overflow-x: auto;
+    background: #f1f5f9; border-bottom: 2px solid #cbd5e1;
+    padding: 7px 20px 0; display: flex; align-items: flex-end; gap: 3px; overflow-x: auto;
   }
   .tab-item {
-    padding: 10px 16px; font-size: 13px; cursor: pointer; color: #64748b;
-    border-bottom: 3px solid transparent; white-space: nowrap;
-    transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    padding: 11px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+    color: #475569; background: transparent; border: 1px solid transparent;
+    border-radius: 8px 8px 0 0; white-space: nowrap;
+    display: flex; align-items: center; gap: 7px; transition: all 0.15s;
   }
-  .tab-item:hover { color: #1a1a2e; }
-  .tab-item.active { color: #1a56db; border-bottom-color: #1a56db; font-weight: 600; }
+  .tab-item:hover { color: #1a1a2e; background: rgba(255,255,255,0.65); }
+  /* Selected tab lifts out of the strip and carries an accent bar */
+  .tab-item.active {
+    background: #fff; border-color: #cbd5e1; border-bottom-color: #fff;
+    color: #1a56db; margin-bottom: -2px; position: relative; z-index: 1;
+    box-shadow: inset 0 3px 0 #1a56db;
+  }
   .tab-count {
-    background: #e2e8f0; color: #64748b; font-size: 10px; font-weight: 700;
-    padding: 1px 6px; border-radius: 999px; min-width: 20px; text-align: center;
+    background: #e2e8f0; color: #64748b; font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px; min-width: 22px; text-align: center;
   }
   .tab-item.active .tab-count { background: #dbeafe; color: #1a56db; }
+  /* Alert tabs keep their own colour when selected */
+  .tab-item.active.c-refused  { color: #dc2626; box-shadow: inset 0 3px 0 #dc2626; }
+  .tab-item.active.c-refused  .tab-count { background: #fee2e2; color: #dc2626; }
+  .tab-item.active.c-mismatch { color: #d97706; box-shadow: inset 0 3px 0 #d97706; }
+  .tab-item.active.c-mismatch .tab-count { background: #fef3c7; color: #92400e; }
 
   /* ── Toolbar ── */
   .toolbar {
@@ -699,6 +710,22 @@ function liveGroups(){
 const DEPT_COLOR = {};
 ALLOWED_GROUPS.forEach((g, i) => { DEPT_COLOR[g] = i === 0 ? 'c-cs' : 'c-qc'; });
 
+// ── Tiles and tabs are built from one list, so they can never disagree.
+// Refused and Mismatches appear only when there is something to act on.
+function cardDefs(){
+  const mismatchCount = agents.filter(isMismatch).length;
+  const refusedCount  = agents.filter(a=>a.cx.label==='Refused').length;
+  return [
+    { key:'All', tile:'ALL TEAMS', tab:'All Teams', cls:'c-all', count: agents.length },
+    ...ALLOWED_GROUPS.map(g=>({
+      key: g, tile: g.toUpperCase(), tab: g, cls: DEPT_COLOR[g]||'c-offline',
+      count: agents.filter(a=>a.group===g).length,
+    })),
+    refusedCount  > 0 ? { key:'Refused',  tile:'REFUSED',    tab:'\u{1F6AB} Refused',    cls:'c-refused',  count: refusedCount  } : null,
+    mismatchCount > 0 ? { key:'Mismatch', tile:'MISMATCHES', tab:'\u26A0 Mismatches', cls:'c-mismatch', count: mismatchCount } : null,
+  ].filter(Boolean);
+}
+
 // ── Render Cards ──
 function renderCards(){
   const mismatchCount = agents.filter(isMismatch).length;
@@ -714,39 +741,20 @@ function renderCards(){
     }));
   } catch (e) {}
 
-  const cards = [
-    { key:'All', label:'ALL TEAMS', cls:'c-all', count: agents.length },
-    ...ALLOWED_GROUPS.map(g=>({
-      key: g, label: g.toUpperCase(), cls: DEPT_COLOR[g]||'c-offline',
-      count: agents.filter(a=>a.group===g).length,
-    })),
-    // Alert tiles come last, and only when there is something to act on
-    refusedCount  > 0 ? { key:'Refused',  label:'REFUSED',    cls:'c-refused',  count: refusedCount  } : null,
-    mismatchCount > 0 ? { key:'Mismatch', label:'MISMATCHES', cls:'c-mismatch', count: mismatchCount } : null,
-  ].filter(Boolean);
-
-  document.getElementById('cardsRow').innerHTML = cards.map(d=>`
+  document.getElementById('cardsRow').innerHTML = cardDefs().map(d=>`
     <div class="metric-card ${d.cls}${activeGroup===d.key?' active':''}" onclick="setGroup('${d.key}')">
       <div class="metric-num ${d.cls}">${d.count}</div>
-      <div class="metric-label">${d.label}</div>
+      <div class="metric-label">${d.tile}</div>
     </div>`).join('');
 }
 
 // ── Render Tabs (Teams) ──
 function renderTabs(){
-  const groups = liveGroups();
-  const teamTabs = [
-    {key:'All',     label:'All Teams'},
-    ...groups.map(g=>({key:g, label:g})),
-    {key:'Refused', label:'🚫 Refused'},
-    {key:'Mismatch',label:'⚠ Mismatches'},
-  ];
-  document.getElementById('tabBar').innerHTML = teamTabs.map(t=>{
-    const count = t.key==='All'?agents.length : t.key==='Mismatch'?agents.filter(isMismatch).length : t.key==='Refused'?agents.filter(a=>a.cx.label==='Refused').length : agents.filter(a=>a.group===t.key).length;
-    return `<div class="tab-item${activeGroup===t.key?' active':''}" onclick="setGroup('${t.key}')">
-      ${t.label}<span class="tab-count">${count}</span>
-    </div>`;
-  }).join('');
+  // One tab per visible tile — so Refused and Mismatches vanish together
+  document.getElementById('tabBar').innerHTML = cardDefs().map(d=>`
+    <div class="tab-item ${d.cls}${activeGroup===d.key?' active':''}" onclick="setGroup('${d.key}')">
+      ${d.tab}<span class="tab-count">${d.count}</span>
+    </div>`).join('');
 }
 
 // ── Sort helper ──
@@ -901,6 +909,8 @@ function setGroup(g){
 }
 
 function render(){
+  // An alert tab can empty out while it is selected — fall back to All Teams
+  if(!cardDefs().some(d=>d.key===activeGroup)) activeGroup='All';
   renderCards();
   renderTabs();
   renderContent();

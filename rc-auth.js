@@ -4,7 +4,7 @@ const RC_REDIRECT    = 'https://dpenny1.github.io/PhoneDashboard/callback.html';
 const RC_AUTH_URL    = 'https://platform.ringcentral.com/restapi/oauth/authorize';
 const RC_TOKEN_URL   = 'https://platform.ringcentral.com/restapi/oauth/token';
 const RC_API_BASE    = 'https://platform.ringcentral.com/restapi/v1.0';
-const RC_SCOPES      = 'ReadPresence ReadCallLog ReadAccounts';
+const RC_SCOPES      = 'ReadPresence EditPresence ReadCallLog ReadAccounts';
 
 // ── PKCE helpers ──
 async function generatePKCE() {
@@ -101,7 +101,13 @@ export async function rcFetch(path, opts = {}) {
   if (!token) throw new Error('Not authenticated');
   const resp = await fetch(RC_API_BASE + path, {
     ...opts,
-    headers: { Authorization: 'Bearer ' + token, ...opts.headers },
+    headers: {
+      Authorization: 'Bearer ' + token,
+      // RingCentral answers 415 Unsupported Media Type when a body arrives
+      // without an explicit content type (this is what broke the presence PUT).
+      ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+      ...opts.headers,
+    },
   });
   if (resp.status === 401) { rcLogout(); location.reload(); }
   if (!resp.ok) throw new Error(`RC API error ${resp.status}: ${await resp.text()}`);
