@@ -138,6 +138,9 @@ function initials(name){
 
 function render(agent){
   const mismatch = isMismatch(agent.mvp, agent.cx);
+  // CXone actions only mean anything against a live CXone session. Without one
+  // (no linked account, or logged out) the API rejects them, so don't offer them.
+  const cxOnline = !!agent.cxId && agent.cx !== 'Logged Out';
   const page = document.getElementById('page');
   page.innerHTML = `
     <!-- Agent header -->
@@ -190,20 +193,29 @@ function render(agent){
           </div>
         </div>
 
+        ${cxOnline ? `
         <div>
           <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px">Set CXone State</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="act-btn act-green"  onclick="setCxState('${agent.cxId||''}','Available',this)">✅ Available</button>
-            <button class="act-btn act-amber"  onclick="setCxState('${agent.cxId||''}','Break',this)">☕ Break</button>
-            <button class="act-btn act-amber"  onclick="setCxState('${agent.cxId||''}','Lunch',this)">🍽 Lunch</button>
-            <button class="act-btn act-blue"   onclick="setCxState('${agent.cxId||''}','Training',this)">📚 Training</button>
+            <button class="act-btn act-green"  onclick="setCxState('${agent.cxId}','Available',this)">✅ Available</button>
+            <button class="act-btn act-amber"  onclick="setCxState('${agent.cxId}','Break',this)">☕ Break</button>
+            <button class="act-btn act-amber"  onclick="setCxState('${agent.cxId}','Lunch',this)">🍽 Lunch</button>
+            <button class="act-btn act-blue"   onclick="setCxState('${agent.cxId}','Training',this)">📚 Training</button>
           </div>
         </div>
 
         <div>
           <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px">CXone Session</div>
-          <button class="act-btn act-red" onclick="doCxLogout('${agent.cxId||''}','${agent.name}',this)">⏏ Logout from CXone</button>
+          <button class="act-btn act-red" onclick="doCxLogout('${agent.cxId}','${agent.name}',this)">⏏ Logout from CXone</button>
         </div>
+        ` : `
+        <div style="font-size:12px;color:#64748b;background:#f8faff;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;line-height:1.6">
+          <strong style="color:#475569">CXone actions unavailable</strong><br>
+          ${!agent.cxId
+            ? 'No CXone account is linked to this agent, so their CXone state cannot be changed from here.'
+            : agent.name.split(' ')[0] + ' is logged out of CXone. State changes and logout need a live session — they can still take direct calls on RingCentral.'}
+        </div>
+        `}
 
         <div id="actionMsg" style="font-size:12px;display:none"></div>
       </div>
