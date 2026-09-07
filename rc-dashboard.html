@@ -714,20 +714,18 @@ function renderCards(){
     }));
   } catch (e) {}
 
-  // Alert tiles only shown when non-zero; when non-zero they go first
-  const alertCards = [
-    mismatchCount > 0 ? { key:'Mismatch', label:'MISMATCHES', cls:'c-mismatch', count: mismatchCount } : null,
+  const cards = [
+    { key:'All', label:'ALL TEAMS', cls:'c-all', count: agents.length },
+    ...ALLOWED_GROUPS.map(g=>({
+      key: g, label: g.toUpperCase(), cls: DEPT_COLOR[g]||'c-offline',
+      count: agents.filter(a=>a.group===g).length,
+    })),
+    // Alert tiles come last, and only when there is something to act on
     refusedCount  > 0 ? { key:'Refused',  label:'REFUSED',    cls:'c-refused',  count: refusedCount  } : null,
+    mismatchCount > 0 ? { key:'Mismatch', label:'MISMATCHES', cls:'c-mismatch', count: mismatchCount } : null,
   ].filter(Boolean);
 
-  const deptCards = ALLOWED_GROUPS.map(g=>({
-    key: g, label: g.toUpperCase(), cls: DEPT_COLOR[g]||'c-offline',
-    count: agents.filter(a=>a.group===g).length,
-  }));
-
-  const allCards = [...alertCards, ...deptCards];
-
-  document.getElementById('cardsRow').innerHTML = allCards.map(d=>`
+  document.getElementById('cardsRow').innerHTML = cards.map(d=>`
     <div class="metric-card ${d.cls}${activeGroup===d.key?' active':''}" onclick="setGroup('${d.key}')">
       <div class="metric-num ${d.cls}">${d.count}</div>
       <div class="metric-label">${d.label}</div>
