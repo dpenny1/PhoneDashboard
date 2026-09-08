@@ -37,12 +37,22 @@ async function cxFetch(path, opts = {}) {
   const token = getCxToken();
   if (!token) throw new Error('Not authenticated with CXone');
 
-  const resp = await fetch(`${CX_BASE}${path}`, {
-    ...opts,
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...opts.headers },
-  });
+  let resp;
+  try {
+    resp = await fetch(`${CX_BASE}${path}`, {
+      ...opts,
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...opts.headers },
+    });
+  } catch (e) {
+    // fetch only rejects for network-level failures. From a browser on another
+    // origin that almost always means CXone refused the cross-origin request,
+    // which is indistinguishable from being offline at this layer.
+    console.error('CXone request to ' + CX_BASE + path + ' never completed:', e);
+    throw new Error('CXone unreachable from the browser (blocked or offline) — ' + e.message);
+  }
 
   if (resp.status === 401) { cxLogout(); throw new Error('CXone token expired — use the Get Token helper to refresh it.'); }
+  if (resp.status === 403) throw new Error('CXone refused the request (403) — the token lacks permission for this call.');
   if (!resp.ok) throw new Error(`CXone API error ${resp.status}`);
   return resp.json();
 }

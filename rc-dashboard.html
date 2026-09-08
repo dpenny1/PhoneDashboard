@@ -630,18 +630,35 @@ async function fetchData() {
     if (rcResult.status === 'rejected') console.warn('RC data failed:', rcResult.reason?.message);
     if (cxResult.status === 'rejected') console.warn('CXone data failed:', cxResult.reason?.message);
 
-    // Only banner if RC itself fails — CXone CORS failure is expected and silent
-    const banner = document.getElementById('fetchWarnBanner');
-    if (banner) {
-      if (rcResult.status === 'rejected') {
-        banner.textContent = '⚠ RC data unavailable — check your connection and try again';
-        banner.style.display = 'block';
-      } else {
-        banner.style.display = 'none';
+    agents = mergeAgents(rcData, cxData);
+
+    // An all-"Logged Out" board has three different causes and they used to look
+    // identical, so name the one that actually happened.
+    const problems = [];
+    if (rcResult.status === 'rejected') {
+      problems.push('RingCentral data unavailable — ' + (rcResult.reason?.message || 'unknown error'));
+    }
+    if (cxResult.status === 'rejected') {
+      problems.push('CXone data unavailable — ' + (cxResult.reason?.message || 'unknown error') +
+                    ' (every agent will read Logged Out until this is fixed)');
+    } else if (!cxData.length) {
+      problems.push('CXone connected but returned no agents — check the token belongs to an account that can see them');
+    } else {
+      const matched = agents.filter(a => a.cxId).length;
+      if (!matched) {
+        problems.push('CXone returned ' + cxData.length + ' agents but none matched a RingCentral name — ' +
+                      'the two systems disagree on spelling (see the console for both lists)');
+        console.warn('CXone names:', cxData.map(c => c.name).sort());
+        console.warn('RingCentral names:', rcData.map(r => r.name).sort());
       }
     }
 
-    agents = mergeAgents(rcData, cxData);
+    const banner = document.getElementById('fetchWarnBanner');
+    if (banner) {
+      banner.innerHTML = problems.map(p => '⚠ ' + p).join('<br>');
+      banner.style.display = problems.length ? 'block' : 'none';
+    }
+
     render();
     runEnforcementSweep(false);
   } catch(e) {
