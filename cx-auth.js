@@ -101,10 +101,31 @@ async function cxFetch(path, opts = {}) {
     console.error('CXone request to ' + CX_API_BASE + path + ' never completed:', e);
     throw new Error('CXone unreachable from the browser (blocked or offline) — ' + e.message);
   }
-  if (resp.status === 401) { cxLogout(); throw new Error('CXone token expired — use the Get Token helper to refresh it.'); }
-  if (resp.status === 403) throw new Error('CXone refused the request (403) — the token lacks permission for this call.');
-  if (resp.status === 404) throw new Error(`CXone endpoint not found (404) at ${path} — check CX_API_VERSION in cx-auth.js.`);
-  if (!resp.ok) throw new Error(`CXone API error ${resp.status}`);
+  if (!resp.ok) {
+    // CXone explains itself in the body. Dropping it leaves a bare status code
+    // and nothing to act on, so carry it into the message and the console.
+    const detail = (await resp.text().catch(() => '')).slice(0, 400);
+    console.error(`CXone ${resp.status} on ${CX_API_BASE}${path}:`, detail || '(empty body)');
+
+    if (resp.status === 401) {
+      cxLogout();
+      throw new Error('CXone token expired — use the Get Token helper to refresh it.' +
+                      (detail ? ' ' + detail : ''));
+    }
+    if (resp.status === 403) {
+      throw new Error('CXone refused the request (403) — the token lacks permission for this call.' +
+                      (detail ? ' ' + detail : ''));
+    }
+    if (resp.status === 404) {
+      throw new Error(`CXone endpoint not found (404) at ${path} — check CX_API_VERSION in cx-auth.js.` +
+                      (detail ? ' ' + detail : ''));
+    }
+    if (resp.status === 400) {
+      throw new Error('CXone rejected the request itself (400) — the token was accepted, so this is a ' +
+                      'malformed call rather than an auth problem.' + (detail ? ' ' + detail : ''));
+    }
+    throw new Error(`CXone API error ${resp.status}` + (detail ? ` — ${detail}` : ''));
+  }
   return resp.json();
 }
 
