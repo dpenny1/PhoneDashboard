@@ -129,23 +129,52 @@ async function cxFetch(path, opts = {}) {
   return resp.json();
 }
 
-// CXone rejects updatedSince=0 with {"error_description":"InvalidUpdatedSince"} —
-// the parameter wants an ISO 8601 datetime, not a number. A date far in the past
-// means "give me every agent".
-const CX_SINCE = '1970-01-01T00:00:00Z';
+// CXone rejects updatedSince=0 with {"error_description":"InvalidUpdatedSince"}.
+// The accepted format varies by tenant and API version, and the docs disagree
+// with each other, so try the plausible ones in order and remember the winner.
+// Everything here means "since long ago", i.e. give me every agent.
+const CX_SINCE_FORMATS = [
+  '2020-01-01T00:00:00Z',   // ISO 8601 UTC
+  '2020-01-01T00:00:00',    // ISO 8601, no zone
+  '2020-01-01',             // date only
+  '1970-01-01T00:00:00Z',   // epoch, if the tenant allows it
+  null,                     // omit the parameter entirely
+];
+const CX_SINCE_KEY = 'cx_updated_since_format';
+
+function statesPath(since) {
+  return api('/agents/states' + (since ? '?updatedSince=' + encodeURIComponent(since) : ''));
+}
 
 export async function fetchAgentStates() {
-  try {
-    return await cxFetch(api('/agents/states?updatedSince=' + encodeURIComponent(CX_SINCE)));
-  } catch (e) {
-    // Some tenants treat an epoch date as out of range. Asking without the
-    // filter at all also returns the full list, so fall back rather than fail.
-    if (/InvalidUpdatedSince/i.test(e.message)) {
-      console.warn('CXone rejected updatedSince=' + CX_SINCE + ' — retrying without the filter.');
-      return cxFetch(api('/agents/states'));
+  // Once we know what this tenant accepts, go straight to it.
+  const known = localStorage.getItem(CX_SINCE_KEY);
+  if (known !== null) {
+    try {
+      return await cxFetch(statesPath(known === '' ? null : known));
+    } catch (e) {
+      if (!/InvalidUpdatedSince/i.test(e.message)) throw e;
+      localStorage.removeItem(CX_SINCE_KEY);   // it stopped working; re-probe
     }
-    throw e;
   }
+
+  let last;
+  for (const since of CX_SINCE_FORMATS) {
+    try {
+      const data = await cxFetch(statesPath(since));
+      localStorage.setItem(CX_SINCE_KEY, since || '');
+      console.info('CXone accepted updatedSince=' + (since || '(omitted)') +
+                   ' — remembered for next time.');
+      return data;
+    } catch (e) {
+      if (!/InvalidUpdatedSince/i.test(e.message)) throw e;  // a real error, stop
+      console.warn('CXone rejected updatedSince=' + (since || '(omitted)'));
+      last = e;
+    }
+  }
+  throw new Error('CXone rejected every updatedSince format tried (' +
+                  CX_SINCE_FORMATS.map(f => f || 'omitted').join(', ') +
+                  '). Last response: ' + (last ? last.message : 'none'));
 }
 
 export async function fetchQueueStats() {
