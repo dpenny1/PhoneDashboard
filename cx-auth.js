@@ -4,13 +4,49 @@
 
 const CX_BASE = 'https://na1.nice-incontact.com';
 
+// Read the claims out of a JWT without verifying it — we only want to tell the
+// user what they pasted, never to trust it. CXone does the actual validating.
+function readJwt(t) {
+  try {
+    const body = t.split('.')[1];
+    if (!body) return null;
+    return JSON.parse(atob(body.replace(/-/g, '+').replace(/_/g, '/')));
+  } catch (e) { return null; }
+}
+
 // ── Login ─────────────────────────────────────────────────────────────────────
-// Save a token pasted directly from the CXone browser session
+// This box wants the bearer token from a signed-in CXone browser session — a
+// JWT beginning "eyJ". An Access Key created in CXone admin (whether you paste
+// the key ID or the secret) is a different kind of credential: it has to be
+// exchanged for a bearer token first, and pasting it here only ever earns a 401.
 export function cxLogin(token) {
   if (!token) throw new Error('No token provided');
-  localStorage.setItem('cx_access_token', token);
-  // No expiry stored — token persists until API returns 401, then user re-pastes
-  localStorage.removeItem('cx_token_expiry');
+  const t = String(token).trim();
+
+  if (!t.startsWith('eyJ')) {
+    throw new Error(
+      'That is not a CXone bearer token. An Access Key ID or Key Secret from ' +
+      'CXone admin will not work here — CXone rejects it with 401. Use the ' +
+      '"Get token from CXone" helper, which copies the token out of your ' +
+      'signed-in CXone tab. It is a long value starting with "eyJ".');
+  }
+
+  const claims = readJwt(t);
+  if (claims && claims.exp && claims.exp * 1000 < Date.now()) {
+    throw new Error('That token expired ' + new Date(claims.exp * 1000).toLocaleString() +
+                    '. Grab a fresh one with the helper — CXone session tokens last a few hours.');
+  }
+
+  localStorage.setItem('cx_access_token', t);
+  // Knowing the expiry up front lets the dashboard warn before calls start failing
+  if (claims && claims.exp) localStorage.setItem('cx_token_expiry', String(claims.exp * 1000));
+  else localStorage.removeItem('cx_token_expiry');
+}
+
+// When does the stored token run out? null if unknown.
+export function cxTokenExpiry() {
+  const v = Number(localStorage.getItem('cx_token_expiry') || 0);
+  return v > 0 ? v : null;
 }
 
 // ── Token storage ─────────────────────────────────────────────────────────────

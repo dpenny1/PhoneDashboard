@@ -50,7 +50,7 @@
     <div class="step-text">Go back to the dashboard and <strong>paste it</strong> into the CXone box</div>
   </div>
 
-  <a class="bookmarklet" href="javascript:(function(){var t=null;var keys=['access_token','userToken','ICToken','token','authToken','bearerToken','id_token'];for(var i=0;i<keys.length;i++){var v=localStorage.getItem(keys[i])||sessionStorage.getItem(keys[i]);if(v&&v.length>20){t=v;break;}}if(!t){for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);var v=localStorage.getItem(k);if(v&&v.startsWith('eyJ')&&v.length>100){t=v;break;}}}if(!t){for(var i=0;i<sessionStorage.length;i++){var k=sessionStorage.key(i);var v=sessionStorage.getItem(k);if(v&&v.startsWith('eyJ')&&v.length>100){t=v;break;}}}if(t){navigator.clipboard.writeText(t).then(function(){alert('CXone token copied to clipboard!\n\nGo back to the dashboard and paste it into the CXone box.');}).catch(function(){prompt('Copy this token:',t);});}else{alert('No token found. Make sure you are logged into CXone in this tab.');}})();">
+  <a class="bookmarklet" href="javascript:(function(){var re=/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+/g;var h=[];try{for(var i=0;i<localStorage.length;i++)h.push(localStorage.getItem(localStorage.key(i)));}catch(e){}try{for(var j=0;j<sessionStorage.length;j++)h.push(sessionStorage.getItem(sessionStorage.key(j)));}catch(e){}h.push(document.cookie);var f=[];h.forEach(function(v){if(!v)return;var m=String(v).match(re);if(m)f=f.concat(m);});f=f.filter(function(v,i,a){return a.indexOf(v)===i;});function ex(t){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).exp||0;}catch(e){return 0;}}var live=f.filter(function(t){return ex(t)*1000>Date.now();});var p=(live.length?live:f).sort(function(a,b){return ex(b)-ex(a);})[0];if(p){navigator.clipboard.writeText(p).then(function(){alert('CXone token copied. Found '+f.length+', '+live.length+' still valid.\n\nPaste it into the CXone box on the dashboard.');}).catch(function(){prompt('Copy this token:',p);});}else{alert('No token found in this page storage.\n\nCXone may keep it in memory only. Use the Network tab method shown on the helper page.');}})();">
     📋 Copy CXone Token
   </a>
 
@@ -58,10 +58,25 @@
 
   <div class="manual-label">Or find it manually</div>
   <p style="margin-bottom:12px">In your CXone tab, press F12 and run this in the Console:</p>
-  <div class="code-block" id="codeBlock">var t=Object.keys(localStorage).map(k=>localStorage.getItem(k)).concat(Object.keys(sessionStorage).map(k=>sessionStorage.getItem(k))).find(v=>v&&v.startsWith('eyJ')&&v.length>100); if(t) { navigator.clipboard.writeText(t); console.log('Token copied!'); } else { console.log('Not found'); }</div>
+  <div class="code-block" id="codeBlock">var re=/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+/g,h=[],i;for(i=0;i&lt;localStorage.length;i++)h.push(localStorage.getItem(localStorage.key(i)));for(i=0;i&lt;sessionStorage.length;i++)h.push(sessionStorage.getItem(sessionStorage.key(i)));h.push(document.cookie);var f=[];h.forEach(v=>{var m=v&&String(v).match(re);if(m)f=f.concat(m)});f=[...new Set(f)];console.log(f.length+' JWT(s) found',f);if(f[0])copy(f[0]);</div>
   <button class="btn-copy" onclick="navigator.clipboard.writeText(document.getElementById('codeBlock').textContent).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy command',1500)})">Copy command</button>
 
-  <div class="note">Tokens expire after a few hours. When the dashboard shows a CXone error, repeat steps 2–4 to refresh it.</div>
+  <hr class="divider">
+
+  <div class="manual-label">If neither finds anything</div>
+  <p style="margin-bottom:12px">
+    Some CXone builds keep the token in memory only, where no storage scan can reach it.
+    Read it off a live request instead — this always works:
+  </p>
+  <ol style="font-size:14px;color:#334155;line-height:1.7;padding-left:20px;margin-bottom:12px">
+    <li>In your CXone tab press <strong>F12</strong> and open the <strong>Network</strong> tab</li>
+    <li>Click around CXone so it makes a request or two</li>
+    <li>Click any request to <strong>nice-incontact.com</strong></li>
+    <li>Under <strong>Headers → Request Headers</strong>, find <strong>Authorization</strong></li>
+    <li>Copy everything after <code>Bearer </code> — that is the token</li>
+  </ol>
+
+  <div class="note">Tokens expire after a few hours. When the dashboard shows a CXone error, grab a fresh one the same way.</div>
 </div>
 </body>
 </html>
