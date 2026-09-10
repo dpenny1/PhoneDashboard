@@ -129,51 +129,64 @@ async function cxFetch(path, opts = {}) {
   return resp.json();
 }
 
-// CXone rejects updatedSince=0 with {"error_description":"InvalidUpdatedSince"}.
-// The accepted format varies by tenant and API version, and the docs disagree
-// with each other, so try the plausible ones in order and remember the winner.
-// Everything here means "since long ago", i.e. give me every agent.
-const CX_SINCE_FORMATS = [
-  '2020-01-01T00:00:00Z',   // ISO 8601 UTC
-  '2020-01-01T00:00:00',    // ISO 8601, no zone
-  '2020-01-01',             // date only
-  '1970-01-01T00:00:00Z',   // epoch, if the tenant allows it
-  null,                     // omit the parameter entirely
+// updatedSince has bitten us twice: "InvalidUpdatedSince" for a bad format
+// (updatedSince=0), then "InvalidDateRange" for 2020-01-01 — CXone caps how far
+// back you may ask. So the candidates are recent windows, newest-acceptable
+// first, and each is computed fresh at call time rather than being a fixed date.
+//
+// A 24h window is ample for a live board: anyone currently logged in has changed
+// state within it, and anyone who hasn't reads Logged Out anyway.
+const hoursAgo = (h, withZone = true) => {
+  const iso = new Date(Date.now() - h * 3600e3).toISOString().replace(/\.\d{3}Z$/, 'Z');
+  return withZone ? iso : iso.replace(/Z$/, '');
+};
+
+const CX_SINCE_CANDIDATES = [
+  { label: '24h',         build: () => hoursAgo(24) },
+  { label: '12h',         build: () => hoursAgo(12) },
+  { label: '1h',          build: () => hoursAgo(1) },
+  { label: '24h no zone', build: () => hoursAgo(24, false) },
+  { label: 'omitted',     build: () => null },
 ];
-const CX_SINCE_KEY = 'cx_updated_since_format';
+const CX_SINCE_KEY = 'cx_updated_since_choice';
+
+// Both complaints mean "try a different updatedSince", not "give up".
+const RETRYABLE = /InvalidUpdatedSince|InvalidDateRange/i;
 
 function statesPath(since) {
   return api('/agents/states' + (since ? '?updatedSince=' + encodeURIComponent(since) : ''));
 }
 
 export async function fetchAgentStates() {
-  // Once we know what this tenant accepts, go straight to it.
-  const known = localStorage.getItem(CX_SINCE_KEY);
-  if (known !== null) {
+  // Once we know which window this tenant accepts, go straight to it.
+  const known = Number(localStorage.getItem(CX_SINCE_KEY));
+  if (CX_SINCE_CANDIDATES[known]) {
     try {
-      return await cxFetch(statesPath(known === '' ? null : known));
+      return await cxFetch(statesPath(CX_SINCE_CANDIDATES[known].build()));
     } catch (e) {
-      if (!/InvalidUpdatedSince/i.test(e.message)) throw e;
-      localStorage.removeItem(CX_SINCE_KEY);   // it stopped working; re-probe
+      if (!RETRYABLE.test(e.message)) throw e;
+      localStorage.removeItem(CX_SINCE_KEY);   // stopped working; probe again
     }
   }
 
   let last;
-  for (const since of CX_SINCE_FORMATS) {
+  for (let i = 0; i < CX_SINCE_CANDIDATES.length; i++) {
+    const c = CX_SINCE_CANDIDATES[i];
+    const since = c.build();
     try {
       const data = await cxFetch(statesPath(since));
-      localStorage.setItem(CX_SINCE_KEY, since || '');
-      console.info('CXone accepted updatedSince=' + (since || '(omitted)') +
-                   ' — remembered for next time.');
+      localStorage.setItem(CX_SINCE_KEY, String(i));
+      console.info('CXone accepted updatedSince ' + c.label +
+                   ' (' + (since || 'omitted') + ') — remembered for next time.');
       return data;
     } catch (e) {
-      if (!/InvalidUpdatedSince/i.test(e.message)) throw e;  // a real error, stop
-      console.warn('CXone rejected updatedSince=' + (since || '(omitted)'));
+      if (!RETRYABLE.test(e.message)) throw e;   // a real error — stop probing
+      console.warn('CXone rejected updatedSince ' + c.label + ': ' + e.message);
       last = e;
     }
   }
-  throw new Error('CXone rejected every updatedSince format tried (' +
-                  CX_SINCE_FORMATS.map(f => f || 'omitted').join(', ') +
+  throw new Error('CXone rejected every updatedSince window tried (' +
+                  CX_SINCE_CANDIDATES.map(c => c.label).join(', ') +
                   '). Last response: ' + (last ? last.message : 'none'));
 }
 
