@@ -75,133 +75,26 @@ function saveCxTokens(data) {
 
 export function getCxToken()     { return localStorage.getItem('cx_access_token'); }
 export function getCxAgentInfo() { return null; }
-// Signed in if we hold a token, or an access key we can mint one from.
-export function cxIsLoggedIn()   { return !!getCxToken() || cxHasAccessKey(); }
+export function cxIsLoggedIn()   { return !!getCxToken(); }
 export function cxLogout()       { ['cx_access_token','cx_token_expiry'].forEach(k => localStorage.removeItem(k)); }
 
-// ── Access keys — the way to stop hand-pasting tokens ────────────────────────
-// A CXone Access Key (ID + Secret, created in CXone admin) does not expire, and
-// can be exchanged for a short-lived bearer token on demand. Storing it here
-// means the dashboard re-authenticates itself instead of asking you to fetch a
-// token out of a CXone tab every few hours.
+// ── Why the token is pasted by hand ──────────────────────────────────────────
+// A CXone Access Key (ID + Secret) can be exchanged for a bearer token, which
+// would let the dashboard re-authenticate itself. That exchange happens on
+// na1.nice-incontact.com, which sends no CORS headers, so a browser cannot make
+// the call — every shape of it fails at the network layer before CXone ever
+// answers. Doing it from a server was ruled out (2026-09-09): no Cloudflare, and
+// the internal FIN Dashboard box is off limits too.
 //
-// The secret lives in this browser's localStorage and is sent only to CXone over
-// HTTPS. It is revocable from CXone admin at any time. Do not save one on a
-// shared machine — use cxClearAccessKey() (Sign out) when you are done.
-const CX_KEY_ID     = 'cx_access_key_id';
-const CX_KEY_SECRET = 'cx_access_key_secret';
-const CX_KEY_SHAPE  = 'cx_token_exchange_shape';
-
-export function cxHasAccessKey() {
-  return !!(localStorage.getItem(CX_KEY_ID) && localStorage.getItem(CX_KEY_SECRET));
-}
-export function cxSaveAccessKey(id, secret) {
-  if (!id || !secret) throw new Error('Both the Access Key ID and Secret are required.');
-  localStorage.setItem(CX_KEY_ID, String(id).trim());
-  localStorage.setItem(CX_KEY_SECRET, String(secret).trim());
-}
-export function cxClearAccessKey() {
-  [CX_KEY_ID, CX_KEY_SECRET, CX_KEY_SHAPE].forEach(k => localStorage.removeItem(k));
-}
-export function cxAccessKeyId() { return localStorage.getItem(CX_KEY_ID) || ''; }
-
-// CXone's docs are inconsistent about how an access key is exchanged, so try the
-// documented shapes in order and remember which one this tenant accepts.
-function exchangeShapes(id, secret) {
-  return [
-    {
-      label: 'access-key endpoint (JSON)',
-      url: CX_AUTH_BASE + '/authentication/v1/token/access-key',
-      init: {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessKeyId: id, accessKeySecret: secret }),
-      },
-    },
-    {
-      label: 'access-token endpoint (client_credentials form)',
-      url: CX_AUTH_BASE + '/authentication/v1/token/access-token',
-      init: {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials', client_id: id, client_secret: secret,
-        }),
-      },
-    },
-    {
-      label: 'access-token endpoint (JSON access key)',
-      url: CX_AUTH_BASE + '/authentication/v1/token/access-token',
-      init: {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessKeyId: id, accessKeySecret: secret }),
-      },
-    },
-  ];
-}
-
-// Swap the stored access key for a fresh bearer token.
-export async function cxMintToken() {
-  const id = localStorage.getItem(CX_KEY_ID);
-  const secret = localStorage.getItem(CX_KEY_SECRET);
-  if (!id || !secret) throw new Error('No CXone access key saved.');
-
-  const all = exchangeShapes(id, secret);
-  const remembered = localStorage.getItem(CX_KEY_SHAPE);
-  const ordered = remembered
-    ? [...all.filter(s => s.label === remembered), ...all.filter(s => s.label !== remembered)]
-    : all;
-
-  const failures = [];
-  for (const shape of ordered) {
-    let resp;
-    try {
-      resp = await fetch(shape.url, shape.init);
-    } catch (e) {
-      failures.push(shape.label + ': unreachable (' + e.message + ')');
-      continue;
-    }
-    const text = await resp.text().catch(() => '');
-    if (!resp.ok) {
-      failures.push(shape.label + ': ' + resp.status + ' ' + text.slice(0, 200));
-      continue;
-    }
-    let data;
-    try { data = JSON.parse(text); } catch (e) {
-      failures.push(shape.label + ': response was not JSON');
-      continue;
-    }
-    const token = data.access_token || data.accessToken || data.token;
-    if (!token) {
-      failures.push(shape.label + ': no access_token in response');
-      continue;
-    }
-    localStorage.setItem('cx_access_token', token);
-    localStorage.setItem('cx_token_expiry',
-      String(Date.now() + (Number(data.expires_in || data.expiresIn) || 3600) * 1000));
-    localStorage.setItem(CX_KEY_SHAPE, shape.label);
-    console.info('CXone token minted from access key via ' + shape.label + '.');
-    return token;
-  }
-
-  console.error('CXone access key exchange failed:\n' + failures.join('\n'));
-  throw new Error('Could not exchange the CXone access key for a token. ' + failures.join(' | '));
-}
-
-// ── Auto refresh ──────────────────────────────────────────────────────────────
-export async function cxRefreshIfNeeded() {
-  if (!cxHasAccessKey()) return;   // pasted-token mode: user re-pastes when it dies
-  const expiry = Number(localStorage.getItem('cx_token_expiry') || 0);
-  // Mint when there is no token, or it lapses within five minutes.
-  if (!getCxToken() || Date.now() > expiry - 5 * 60 * 1000) {
-    await cxMintToken();
-  }
-}
+// So the token comes out of a signed-in CXone tab and is pasted in here. It
+// lasts about an hour. cx-token-helper.html grabs it in one click.
+//
+// If a server ever does become available, the missing piece is one endpoint that
+// holds the access key and returns { access_token, expires_in } — everything
+// below already works off localStorage.cx_access_token and would not change.
 
 // ── API calls ─────────────────────────────────────────────────────────────────
 async function cxFetch(path, opts = {}) {
-  await cxRefreshIfNeeded();
   const token = getCxToken();
   if (!token) throw new Error('Not authenticated with CXone');
   let resp;

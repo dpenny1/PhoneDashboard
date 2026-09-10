@@ -534,8 +534,8 @@ async function checkAuth() {
 
 
 // ── In-browser auto-logout enforcement ────────────────────────────────────────
-// The Cloudflare worker in worker.js is the unattended version of this and is
-// not deployed. This runs only while the dashboard is open, using YOUR CXone
+// There is no unattended version — that would need a server, and none is
+// available. This runs only while the dashboard is open, using YOUR CXone
 // token, and never acts on its own — past the cutoff it lists who is still
 // logged in and asks. Answering the prompt (either way) settles those agents
 // for the rest of the day so it does not nag on every refresh; "Run now" in the

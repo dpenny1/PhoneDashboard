@@ -142,26 +142,11 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
           Connect CXone
         </button>
-
-        <!-- Access keys would remove the daily paste, but CXone's auth host sends
-             no CORS headers, so the exchange cannot happen in a browser. Left in
-             place, disabled, for when a server-side proxy does the exchange. -->
-        <details style="margin-top:10px;text-align:left">
-          <summary style="font-size:12px;color:#64748b;cursor:pointer">Use an Access Key instead (needs a proxy)</summary>
-          <div style="font-size:12px;color:#64748b;margin:6px 0">
-            An Access Key never expires, but CXone refuses the token exchange from a
-            browser. This works once a server-side proxy is deployed.
-          </div>
-          <input class="cx-input" id="cxKeyId" placeholder="Access Key ID"
-                 autocomplete="off" style="margin-bottom:6px">
-          <input class="cx-input" id="cxKeySecret" type="password" placeholder="Access Key Secret"
-                 autocomplete="new-password" style="margin-bottom:6px">
-          <button class="btn-signin-lg" id="cxLoginBtn" style="background:#94a3b8">Try access key</button>
-        </details>
       </div>
       <div class="login-note">
-        Your key is stored in this browser only and sent just to CXone. Revoke it in
-        CXone admin at any time. Don't save one on a shared machine.
+        The token is stored in this browser only and sent just to CXone. It expires
+        on CXone's own schedule (about an hour) — paste a fresh one when it does.
+        Don't leave one on a shared machine.
       </div>
     </div>
 
@@ -171,7 +156,7 @@
 
 <script type="module">
 import { isLoggedIn, rcLogin, rcLogout } from './rc-auth.js';
-import { cxIsLoggedIn, cxLogin, cxLogout, cxSaveAccessKey, cxClearAccessKey, cxMintToken } from './cx-auth.js';
+import { cxIsLoggedIn, cxLogin, cxLogout } from './cx-auth.js';
 
 // If already fully logged in, skip this page entirely
 if (isLoggedIn() && cxIsLoggedIn()) {
@@ -209,7 +194,6 @@ async function updateUI() {
     cxBox.classList.remove('connected');
     cxCheck.style.display = 'none';
     if (cxForm) cxForm.style.display = 'block';
-    document.getElementById('cxLoginBtn').onclick = handleCxLogin;
     const tokenBtn = document.getElementById('cxTokenBtn');
     if (tokenBtn) tokenBtn.onclick = handleCxToken;
   }
@@ -229,33 +213,11 @@ function cxError(msg) {
   err.style.display = msg ? 'block' : 'none';
 }
 
-// Access key path — save the key, then prove it works by minting a token now
-// rather than letting the first failure surface later on the dashboard.
-async function handleCxLogin() {
-  const btn    = document.getElementById('cxLoginBtn');
-  const id     = document.getElementById('cxKeyId').value.trim();
-  const secret = document.getElementById('cxKeySecret').value.trim();
-  cxError('');
-  if (!id || !secret) { cxError('Enter both the Access Key ID and Secret.'); return; }
-
-  btn.disabled = true;
-  const label = btn.textContent;
-  btn.textContent = 'Connecting…';
-  try {
-    cxSaveAccessKey(id, secret);
-    await cxMintToken();                     // fails loudly here if the key is wrong
-    document.getElementById('cxKeySecret').value = '';
-    updateUI();
-  } catch (e) {
-    cxClearAccessKey();                      // don't keep a key that does not work
-    cxError(e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = label;
-  }
-}
-
-// Fallback path — a pasted session token, still handy if the key is refused
+// A pasted CXone session token is the only way in. CXone's auth host sends no
+// CORS headers, so a browser cannot exchange an access key for a token itself,
+// and no server is available to do it on our behalf (2026-09-09) — so the token
+// has to come out of a signed-in CXone tab. cx-token-helper.html fetches it in
+// one click rather than by hand.
 function handleCxToken() {
   const token = document.getElementById('cxToken').value.trim();
   cxError('');
