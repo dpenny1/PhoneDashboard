@@ -129,8 +129,23 @@ async function cxFetch(path, opts = {}) {
   return resp.json();
 }
 
+// CXone rejects updatedSince=0 with {"error_description":"InvalidUpdatedSince"} —
+// the parameter wants an ISO 8601 datetime, not a number. A date far in the past
+// means "give me every agent".
+const CX_SINCE = '1970-01-01T00:00:00Z';
+
 export async function fetchAgentStates() {
-  return cxFetch(api('/agents/states?updatedSince=0'));
+  try {
+    return await cxFetch(api('/agents/states?updatedSince=' + encodeURIComponent(CX_SINCE)));
+  } catch (e) {
+    // Some tenants treat an epoch date as out of range. Asking without the
+    // filter at all also returns the full list, so fall back rather than fail.
+    if (/InvalidUpdatedSince/i.test(e.message)) {
+      console.warn('CXone rejected updatedSince=' + CX_SINCE + ' — retrying without the filter.');
+      return cxFetch(api('/agents/states'));
+    }
+    throw e;
+  }
 }
 
 export async function fetchQueueStats() {
